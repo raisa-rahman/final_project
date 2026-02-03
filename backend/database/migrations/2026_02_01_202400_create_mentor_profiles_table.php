@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::dropIfExists('mentor_profiles');
         Schema::create('mentor_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('university_id')->constrained();
-
             $table->string('subject_expertise');
             $table->text('bio')->nullable();
             $table->boolean('is_verified')->default(false);
