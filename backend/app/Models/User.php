@@ -46,8 +46,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    public function mentorProfie()
+    public function mentorProfile()
     {
-        return $this->hasOne(MentorProfie::class);
+        return $this->hasOne(MentorProfile::class);
     }
+
 }
