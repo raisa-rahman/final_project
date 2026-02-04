@@ -23,7 +23,7 @@ class User extends Authenticatable
         'password',
         'role',
     ];
-
+    protected $with = ['mentorProfile'];
     /**
      * The attributes that should be hidden for serialization.
      *

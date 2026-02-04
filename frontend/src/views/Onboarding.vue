@@ -1,24 +1,29 @@
 <script setup>
 import axios from 'axios';
-import {ref} from 'vue';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-const form = ref ({
-  name: '',
-  email:'',
-  password:'',
-  password_confirmation:'',
-  role:'mentor'
+const router = useRouter();
+const form = ref({
+    name: '',
+    email: '',
+    password: '',
+    password_confirmation: '', // Laravel validation requires this
 });
 
 const handleRegister = async () => {
-  await axios.get('http://localhost:8000/sanctum/csrf-cookie');
+    try {
+        await axios.get('http://localhost:8000/sanctum/csrf-cookie');
 
-  try{
-    await axios.post('http://localhost:8000/register', form.value);
-    alert('Registration Successful! Your profile is pending verification.')
-  }catch(error){
-    console.error("Registration failed", error.response?.data || error.message);
-  }
+        await axios.post('http://localhost:8000/register', form.value);
+        
+        alert('Submitted! Your profile has been sent for verification.');
+        
+        router.push('/dashboard');
+    } catch (error) {
+        console.error("Registration failed:", error.response?.data);
+        alert('Could not submit. Please check if the email is already taken.');
+    }
 };
 </script>
 
@@ -56,7 +61,6 @@ const handleRegister = async () => {
   </div>
 </template>
 <style scoped>
-/* Importing the font from Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@700&display=swap');
 
 .onboarding-container {
@@ -64,13 +68,12 @@ const handleRegister = async () => {
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   padding: 40px;
-  /* Use SF-UI Text equivalent if not on Mac */
   font-family: 'SF Pro Text', 'Helvetica Neue', sans-serif; 
 }
 
 h1 {
   font-family: 'Red Hat Display', sans-serif;
-  color: #3e55f8; /* Your Blue Theme */
+  color: #3e55f8; 
   margin-bottom: 0.5rem;
 }
 
@@ -89,18 +92,18 @@ input {
   width: 100%;
   padding: 12px;
   margin-top: 6px;
-  border: 1px solid #DEE4FE; /* Your Light Purple Theme */
+  border: 1px solid #DEE4FE; 
   border-radius: 8px;
   transition: border-color 0.2s;
 }
 
 input:focus {
   outline: none;
-  border-color: #3e55f8; /* Blue focus */
+  border-color: #3e55f8; 
 }
 
 button {
-  background-color: #3e55f8; /* Your Blue Theme */
+  background-color: #3e55f8; 
   color: white;
   padding: 14px;
   border: none;
@@ -112,7 +115,7 @@ button {
 }
 
 button:hover {
-  background-color: #2DE1AA; /* Your Green Theme on hover */
+  background-color: #2DE1AA; 
 }
 
 button:active {
