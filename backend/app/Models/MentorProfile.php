@@ -2,19 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class MentorProfile extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'user_id',
         'university_id',
         'subject_expertise',
         'bio',
         'is_verified',
+        'target_country',
+        'current_university_year',
+        'profile_photo_path', 
+        'document_path'      
     ];
 
     public function user()

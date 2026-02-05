@@ -2,12 +2,15 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
+import FileUpload from '../components/FileUpload.vue';
 
 interface User {
   name: string;
   role: string;
   mentor_profile?: {
+    id: number;
     is_verified: number | boolean;
+    profile_photo_path?: string;
   }
 }
 
@@ -59,6 +62,14 @@ const handleLogout = async () => {
         <h2>Access Restricted</h2>
         <p>You must be logged in to view your dashboard.</p>
         <button @click="router.push('/login')" class="login-btn">Go to Login</button>
+    </div>
+  </div>
+  <div v-if="user">
+    <div class="profile-setup" v-if="user.mentor_profile">
+      <h3>Complete Your Profile</h3>
+      <FileUpload uploadType="photo" :profileId="user.mentor_profile.id" />
+      
+      <FileUpload uploadType="document" :profileId="user.mentor_profile.id" />
     </div>
   </div>
 </template>
