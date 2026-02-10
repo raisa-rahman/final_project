@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -23,8 +22,15 @@ class User extends Authenticatable
         'password',
         'role',
     ];
-    protected $with = ['mentorProfile'];
-    /**
+    
+protected $with = ['mentorProfile', 'studentProfile'];
+
+public function studentProfile()
+{
+    return $this->hasOne(StudentProfile::class);
+}
+
+/**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
@@ -50,5 +56,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(MentorProfile::class);
     }
+
+    protected static function booted()
+{
+    static::created(function ($user) {
+        if ($user->role === 'student') {
+            \App\Models\StudentProfile::create(['user_id' => $user->id]);
+        }
+    });
+}
 
 }

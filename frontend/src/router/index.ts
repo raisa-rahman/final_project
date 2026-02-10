@@ -1,50 +1,52 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import MentorDirectory from '../views/MentorDirectory.vue'
-// Import the new views you'll create next
-import MentorProfile from '../views/MentorProfile.vue'
-import BookingCalendar from '../views/BookingCalendar.vue'
-import Onboarding from '../views/Onboarding.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import HomeView from '../views/HomeView.vue';
+import MentorDirectory from '../views/MentorDirectory.vue';
+import StudentOnboarding from '../views/StudentOnboarding.vue';
+import MentorOnboarding from '../views/MentorOnboarding.vue';
+
+// Universal Guard for role-based access
+const guardByRole = (role: string, redirectPath: string) => (to: any, from: any, next: any) => {
+  const userData = localStorage.getItem('user');
+  const user = userData ? JSON.parse(userData) : null;
+
+  if (user && user.role === role) {
+    next();
+  } else {
+    if (role === 'admin') alert('Access Denied: Admins Only');
+    next(redirectPath);
+  }
+};
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', name: 'home', component: HomeView },
-    { path: '/mentors', name: 'directory', component: MentorDirectory },
-    { path: '/mentors/:id', name: 'mentor-profile', component: MentorProfile },
-    { path: '/book/:id', name: 'booking', component: BookingCalendar },
-    { path: '/join', name: 'onboarding', component: Onboarding },
-    { path: '/login', name: 'login', component: () => import('../views/Login.vue') },
+    { path: '/find-a-mentor', name: 'directory', component: MentorDirectory },
+
+    { path: '/student/login', component: StudentOnboarding, props: { initialMode: 'login' } },
+    { path: '/student/signup', component: StudentOnboarding, props: { initialMode: 'signup' } },
     { 
-      path: '/dashboard', 
-      name: 'dashboard', 
-      component: () => import('../views/Dashboard.vue') 
+      path: '/student/login/dashboard', 
+      component: () => import('../views/StudentDashboard.vue'),
+      beforeEnter: guardByRole('student', '/student/login')
     },
-    
-    {
-      path: '/adminlogin',
-      name: 'admin-login',
-      component: () => import('../views/AdminLogin.vue')
-    },
-    {
-  path: '/adminlogin/home',
-  name: 'admin-home',
-  component: () => import('../views/AdminDashboard.vue'),
-  beforeEnter: (to, from, next) => {
-    // Check if a user is stored in local storage and if they are an admin
-    const userData = localStorage.getItem('user');
-    const user = userData ? JSON.parse(userData) : null;
 
-    if (user && user.role === 'admin') {
-      next();
-    } else {
-      alert('Access Denied: Admins Only');
-      next('/adminlogin');
+    { path: '/mentor/login', component: MentorOnboarding, props: { initialMode: 'login' } },
+    { path: '/mentor/signup', component: MentorOnboarding, props: { initialMode: 'signup' } },
+    { 
+      path: '/mentor/login/dashboard', 
+      component: () => import('../views/MentorDashboard.vue'),
+      beforeEnter: guardByRole('mentor', '/mentor/login')
+    },
+
+    { path: '/staff-portal', name: 'AdminLogin', component: () => import('../views/AdminLogin.vue') },
+    { 
+      path: '/staff-portal/dashboard', 
+      name: 'AdminDashboard', 
+      component: () => import('../views/AdminDashboard.vue'),
+      beforeEnter: guardByRole('admin', '/staff-portal')
     }
-  }
-},
   ]
-})
+});
 
-
-export default router
+export default router;

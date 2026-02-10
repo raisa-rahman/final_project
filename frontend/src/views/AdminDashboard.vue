@@ -29,7 +29,9 @@ const loading = ref(true);
 
 const fetchAllMentors = async () => {
     try {
-        const response = await axios.get('/api/admin/mentors');
+        const response = await axios.get('http://localhost:8000/api/admin/mentors', { 
+            withCredentials: true 
+        });
         mentors.value = response.data;
     } catch (err) {
         console.error("Failed to fetch mentors", err);
@@ -41,7 +43,6 @@ const fetchAllMentors = async () => {
 const toggleVerification = async (profileId: number) => {
     try {
         await axios.post(`/api/admin/mentors/${profileId}/toggle-verify`);
-        // Refresh the list to reflect the new state in the database
         fetchAllMentors();
     } catch (err) {
         alert("Error updating status");

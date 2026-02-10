@@ -10,16 +10,22 @@ const handleAdminLogin = async () => {
     try {
         await axios.get('http://localhost:8000/sanctum/csrf-cookie', { withCredentials: true });
         
-        await axios.post('http://localhost:8000/login', form.value, { withCredentials: true });
+        const response = await axios.post('http://localhost:8000/api/login', form.value, { 
+            withCredentials: true,
+            headers: { 'Accept': 'application/json' } 
+        });
 
-        const response = await axios.get('http://localhost:8000/api/user', { withCredentials: true });
+        const userData = response.data.user;
         
-        localStorage.setItem('user', JSON.stringify(response.data));
-        
-        router.push('/adminlogin/home');
+        if (userData && userData.role === 'admin') {
+            localStorage.setItem('user', JSON.stringify(userData));
+            router.push('/staff-portal/dashboard');
+        } else {
+            alert('Access Denied: Admin account required.');
+        }
     } catch (error: any) {
-        console.error("Login Error:", error.response?.data);
-        alert('Access Denied. Ensure you are using the Admin account.');
+        console.error("Detailed Login Error:", error.response?.data || error.message);
+        alert('Login failed. Please check your credentials.');
     }
 };
 </script>

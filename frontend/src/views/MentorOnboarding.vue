@@ -1,0 +1,240 @@
+<script setup>
+import { ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import axios from 'axios';
+import logoUrl from '../assets/logo.png'; 
+
+const props = defineProps(['initialMode']);
+const route = useRoute();
+const router = useRouter();
+
+const mode = ref(props.initialMode || (route.path.includes('signup') ? 'signup' : 'login'));
+
+const form = ref({
+    name: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
+    role: 'mentor'
+});
+
+const handleSubmit = async () => {
+    try {
+        await axios.get('http://localhost:8000/sanctum/csrf-cookie');
+        await axios.post('http://localhost:8000/register', form.value, {
+            headers: { 'Accept': 'application/json' }
+        });
+        
+        alert('Signed up successfully! Please log in to access your portal.');
+        mode.value = 'login'; 
+    } catch (error) {
+        console.error("Signup Error:", error.response?.data);
+        alert("Action failed. Check if email is already taken.");
+    }
+};
+
+const handleLogin = async () => {
+    try {
+        await axios.get('http://localhost:8000/sanctum/csrf-cookie');
+        
+        const response = await axios.post('http://localhost:8000/api/login', form.value);
+
+        const userData = response.data.user;
+        
+        if (userData && userData.role === 'mentor') {
+            localStorage.setItem('user', JSON.stringify(userData));
+            router.push('/mentor/login/dashboard'); 
+        } else {
+            alert('Access Denied: Mentor account required.');
+        }
+    } catch (error) {
+        console.error("Mentor Auth Error:", error.response?.data || error.message);
+        alert('Login failed. Please check your credentials.');
+    }
+};
+
+watch(() => route.path, (newPath) => {
+  mode.value = newPath.includes('signup') ? 'signup' : 'login';
+});
+
+const toggleMode = (newMode) => {
+  mode.value = newMode;
+  router.push(`/mentor/${newMode}`);
+};
+</script>
+
+<template>
+  <div class="auth-wrapper">
+
+    <div class="onboarding-container">
+      <div class="brand-header">
+        <img :src="logoUrl" alt="Student Circus" class="logo">
+      </div>
+
+      <div class="tabs">
+        <button :class="{ active: mode === 'login' }" @click="toggleMode('login')">Login</button>
+        <button :class="{ active: mode === 'signup' }" @click="toggleMode('signup')">Sign up</button>
+      </div>
+
+      <div class="form-content">
+        <h1>{{ mode === 'signup' ? 'Join as a Mentor' : 'Mentor Login' }}</h1>
+        <p>{{ mode === 'signup' ? 'Share your expertise with international students.' : 'Welcome back to your mentor portal.' }}</p>
+        
+<form @submit.prevent="handleSubmit">
+
+<form @submit.prevent="mode === 'signup' ? handleSubmit() : handleLogin()">
+            <label v-if="mode === 'signup'">
+            Full Name:
+            <input v-model="form.name" type="text" required placeholder="e.g. Jane Doe">
+          </label>
+
+          <label>
+            Professional Email:
+            <input v-model="form.email" type="email" required placeholder="name@company.com">
+          </label>
+
+          <label>
+            Password:
+            <input v-model="form.password" type="password" required>
+          </label>
+
+          <label v-if="mode === 'signup'">
+            Confirm Password:
+            <input v-model="form.password_confirmation" type="password" required>
+          </label>
+
+          <button type="submit" class="submit-btn">
+            {{ mode === 'signup' ? 'Submit for Verification' : 'Sign In' }} →
+          </button>
+        </form>
+        </form>
+
+        <p class="footer-note" v-if="mode === 'signup'">
+          By signing up, you agree to our <a href="#">Mentor Terms</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@700&display=swap');
+
+.auth-wrapper {
+  background-color: #f8faff; /* Light brand tint */
+  min-height: 100vh;
+}
+
+.back-bar {
+  background-color: #3e55f8;
+  padding: 12px 5%;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.onboarding-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 3rem auto;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.brand-header {
+  text-align: center;
+  padding: 2rem 0 1rem;
+}
+
+.logo { height: 50px; }
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #DEE4FE;
+}
+
+.tabs button {
+  flex: 1;
+  padding: 1rem;
+  background: none;
+  border: none;
+  font-weight: 700;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.tabs button.active {
+  color: #3e55f8;
+  border-bottom: 3px solid #3e55f8; /* Signature underline */
+}
+
+.form-content { padding: 2rem 3rem; }
+
+h1 {
+  font-family: 'Red Hat Display', sans-serif;
+  color: #1a1f3c; /* Dark navy brand color */
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+}
+
+p {
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+label {
+  display: block;
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: #374151;
+  margin-bottom: 1rem;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 6px;
+  border: 1px solid #DEE4FE; 
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+input:focus {
+  outline: none;
+  border-color: #3e55f8; 
+}
+
+.submit-btn {
+  width: 100%;
+  background-color: #3e55f8; 
+  color: white;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background-color 0.2s;
+}
+
+.submit-btn:hover {
+  background-color: #2DE1AA; /* Teal hover effect */
+}
+
+.footer-note {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.footer-note a { color: #3e55f8; text-decoration: none; font-weight: 600; }
+</style>
