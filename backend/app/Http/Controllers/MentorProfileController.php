@@ -30,22 +30,19 @@ public function upload(Request $request, MentorProfile $profile)
 
     if ($request->hasFile('file')) {
         $path = $request->file('file')->store('mentors', 'public');
-
         if ($request->type === 'photo') {
             $profile->update(['profile_photo_path' => $path]);
         } else {
             $profile->update(['document_path' => $path]);
         }
-
         return response()->json(['message' => 'File uploaded successfully', 'path' => $path]);
     }
-
     return response()->json(['message' => 'Upload failed'], 400);
 }
+
 public function show(Request $request)
 {
     $profile = \App\Models\MentorProfile::where('user_id', $request->user()->id)->first();
-    
     if (!$profile) {
         $profile = \App\Models\MentorProfile::create([
             'user_id' => $request->user()->id,
@@ -53,7 +50,6 @@ public function show(Request $request)
             'is_verified' => 0
         ]);
     }
-    
     return response()->json($profile);
-}
+    }
 }

@@ -34,7 +34,6 @@ const isDashboard = computed(() => route.path === '/dashboard' || route.path ===
 </nav>
       </div>
     </header>
-
     <main>
       <RouterView />
     </main>

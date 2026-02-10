@@ -56,7 +56,6 @@ public function studentProfile()
     {
         return $this->hasOne(MentorProfile::class);
     }
-
     protected static function booted()
 {
     static::created(function ($user) {
@@ -64,6 +63,5 @@ public function studentProfile()
             \App\Models\StudentProfile::create(['user_id' => $user->id]);
         }
     });
-}
-
+    }
 }

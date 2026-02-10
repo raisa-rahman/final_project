@@ -23,7 +23,7 @@ const uploadFile = async () => {
     
     formData.append(props.uploadType === 'photo' ? 'profile_photo' : 'document', selectedFile.value);
     formData.append('profile_id', props.profileId.toString());
-
+    
     try {
         await axios.post('http://localhost:8000/api/mentor/upload', formData, {
             headers: {

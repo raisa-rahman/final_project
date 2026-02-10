@@ -16,9 +16,7 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request): JsonResponse
 {
     $request->authenticate();
-
     $request->session()->regenerate();
-
     return response()->json([
         'user' => $request->user(),
         'message' => 'Logged in successfully'

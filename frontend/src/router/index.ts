@@ -4,7 +4,6 @@ import MentorDirectory from '../views/MentorDirectory.vue';
 import StudentOnboarding from '../views/StudentOnboarding.vue';
 import MentorOnboarding from '../views/MentorOnboarding.vue';
 
-// Universal Guard for role-based access
 const guardByRole = (role: string, redirectPath: string) => (to: any, from: any, next: any) => {
   const userData = localStorage.getItem('user');
   const user = userData ? JSON.parse(userData) : null;

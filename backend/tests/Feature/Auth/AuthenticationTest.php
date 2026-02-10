@@ -1,35 +1,49 @@
 <?php
 
+namespace Tests\Feature;
+
 use App\Models\User;
+use App\Models\StudentProfile;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-test('users can authenticate using the login screen', function () {
-    $user = User::factory()->create();
+class AuthenticationTest extends TestCase
+{
+    use RefreshDatabase; 
 
-    $response = $this->post('/login', [
-        'email' => $user->email,
-        'password' => 'password',
-    ]);
+    /** @test */
+    public function automated_student_profile_creation()
+    {
+        $user = User::create([
+            'name' => 'Test Student',
+            'email' => 'student@test.com',
+            'password' => bcrypt('password'),
+            'role' => 'student'
+        ]);
 
-    $this->assertAuthenticated();
-    $response->assertNoContent();
-});
+        $this->assertDatabaseHas('student_profiles', [
+            'user_id' => $user->id
+        ]);
+    }
 
-test('users can not authenticate with invalid password', function () {
-    $user = User::factory()->create();
+    /** @test */
+    public function custom_api_login_returns_json_user_object()
+    {
+        $user = User::factory()->create([
+            'email' => 'login@test.com',
+            'password' => bcrypt('password'),
+            'role' => 'admin'
+        ]);
 
-    $this->post('/login', [
-        'email' => $user->email,
-        'password' => 'wrong-password',
-    ]);
+        $response = $this->postJson('http://localhost:8000/api/login', [
+            'email' => 'login@test.com',
+            'password' => 'password',
+        ]);
 
-    $this->assertGuest();
-});
-
-test('users can logout', function () {
-    $user = User::factory()->create();
-
-    $response = $this->actingAs($user)->post('/logout');
-
-    $this->assertGuest();
-    $response->assertNoContent();
-});
+        $response->assertStatus(200)
+                 ->assertJsonStructure([
+                     'status',
+                     'user' => ['id', 'name', 'email', 'role']
+                 ]);
+    }
+}

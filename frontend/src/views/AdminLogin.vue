@@ -14,9 +14,7 @@ const handleAdminLogin = async () => {
             withCredentials: true,
             headers: { 'Accept': 'application/json' } 
         });
-
         const userData = response.data.user;
-        
         if (userData && userData.role === 'admin') {
             localStorage.setItem('user', JSON.stringify(userData));
             router.push('/staff-portal/dashboard');
