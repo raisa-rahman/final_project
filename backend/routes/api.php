@@ -4,6 +4,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MentorProfileController;
+use App\Http\Controllers\DirectoryController;
+
+Route::get('/mentors/directory', [DirectoryController::class, 'index']);
 
 Route::post('/admin/mentors/{profile}/toggle-verify', function (App\Models\MentorProfile $profile) {
     $profile->is_verified = $profile->is_verified ? 0 : 1;
