@@ -6,6 +6,8 @@ import axios from 'axios';
 const router = useRouter();
 const user = JSON.parse(localStorage.getItem('user'));
 const loading = ref(false);
+const mentorsLoading = ref(true); 
+const mentors = ref([]); 
 const message = ref('');
 const error = ref(false);
 
@@ -13,6 +15,20 @@ const profile = ref({
     target_university: '',
     target_country: ''
 });
+
+const fetchMentors = async () => {
+    try {
+        const response = await axios.get('http://localhost:8000/api/mentors/directory');
+        
+        mentors.value = response.data.filter(mentor => Number(mentor.is_verified) === 1);
+        
+        console.log("Verified Mentors found:", mentors.value.length);
+    } catch (err) {
+        console.error("Directory API failed. Check if Controller is imported in api.php", err);
+    } finally {
+        mentorsLoading.value = false;
+    }
+};
 
 const fetchProfile = async () => {
     try {
@@ -50,7 +66,10 @@ const handleLogout = async () => {
     }
 };
 
-onMounted(fetchProfile);
+onMounted(() => {
+    fetchProfile();
+    fetchMentors();
+});
 </script>
 
 <template>
@@ -64,21 +83,44 @@ onMounted(fetchProfile);
     </header>
 
     <div class="profile-card">
-      <h2>Edit My Educational Goals</h2>
-      <form @submit.prevent="updateProfile" class="edit-form">
-        <div class="form-group">
-          <label>Target University</label>
-          <input v-model="profile.target_university" type="text" placeholder="e.g. City St George's">
+       <h2>Edit My Educational Goals</h2>
+       </div>
+
+    <div class="directory-section">
+  <div class="section-header">
+    <div class="title-row">
+        <h2>Available Verified Mentors</h2>
+        <span class="mentor-count">{{ mentors.length }} mentors found</span>
+    </div>
+    <p class="subtitle">Connect with alumni who have successfully navigated your target pathway.</p>
+  </div>
+
+  <div v-if="mentorsLoading" class="loading-state">
+    Finding mentors...
+  </div>
+  
+
+      <div v-else class="mentor-grid">
+        <div v-for="mentor in mentors" :key="mentor.id" class="mentor-card">
+          <div class="mentor-avatar">
+            <img 
+              :src="mentor.profile_photo_path ? `http://localhost:8000/storage/${mentor.profile_photo_path}` : 'https://via.placeholder.com/80'" 
+              alt="Mentor"
+            />
+            <span class="verify-tag">Verified ✅</span>
+          </div>
+          <div class="mentor-info">
+            <h3>{{ mentor.user?.name }}</h3>
+            <p class="expertise">{{ mentor.subject_expertise }}</p>
+            <p class="bio-snippet">{{ mentor.bio || 'Alumni mentor ready to help.' }}</p>
+            <button class="connect-btn">View Profile</button>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Target Country</label>
-          <input v-model="profile.target_country" type="text" placeholder="e.g. United Kingdom">
+        
+        <div v-if="mentors.length === 0" class="empty-state">
+          No verified mentors available at this time.
         </div>
-        <button type="submit" :disabled="loading" class="save-btn">
-          {{ loading ? 'Saving...' : 'Update Goals' }}
-        </button>
-      </form>
-      <p v-if="message" class="status-msg">{{ message }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -96,4 +138,43 @@ input { width: 100%; padding: 12px; border: 1px solid #DEE4FE; border-radius: 8p
 .save-btn:hover { background-color: #2DE1AA; }
 .logout-btn { color: #ef4444; border: 1px solid #ef4444; background: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
 .status-message.success { color: #3e55f8; margin-top: 1rem; font-weight: 600; }
+.directory-section { margin-top: 3rem; }
+.section-header { margin-bottom: 1.5rem; }
+.mentor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+
+.mentor-card { 
+  background: white; 
+  border-radius: 12px; 
+  padding: 1.5rem; 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+  border: 1px solid #DEE4FE;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.mentor-card:hover { transform: translateY(-5px); }
+
+.mentor-avatar { position: relative; margin-bottom: 1rem; }
+.mentor-avatar img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #3e55f8; }
+
+.verify-tag { 
+  position: absolute; 
+  bottom: -5px; 
+  right: -10px; 
+  background: #2DE1AA; 
+  color: white; 
+  font-size: 0.7rem; 
+  padding: 2px 8px; 
+  border-radius: 20px; 
+  font-weight: 700; 
+}
+
+.expertise { color: #3e55f8; font-weight: 700; font-size: 0.9rem; margin: 0.5rem 0; }
+.bio-snippet { font-size: 0.85rem; color: #6b7280; margin-bottom: 1rem; }
+.connect-btn { background: #3e55f8; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; }
+
+.loading-state, .empty-state { text-align: center; padding: 2rem; color: #6b7280; }
 </style>

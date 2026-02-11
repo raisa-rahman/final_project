@@ -6,6 +6,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MentorProfileController;
 use App\Http\Controllers\DirectoryController;
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/mentors/directory', [App\Http\Controllers\DirectoryController::class, 'index']);
+    Route::post('/admin/mentors/{profile}/toggle-verify', [MentorProfileController::class, 'toggleVerify']);
+});
+
 Route::get('/mentors/directory', [DirectoryController::class, 'index']);
 
 Route::post('/admin/mentors/{profile}/toggle-verify', function (App\Models\MentorProfile $profile) {
