@@ -9,21 +9,16 @@ class DirectoryController extends Controller
 {
 public function index(Request $request)
 {
-    $query = MentorProfile::with(['user'])
-        ->where('is_verified', 1);
+    $query = MentorProfile::with(['user'])->where('is_verified', 1);
 
-    if ($request->filled('subject')) {
+    if ($request->filled('subject') && $request->subject !== 'undefined') {
         $query->where('subject_expertise', 'like', '%' . $request->subject . '%');
     }
 
-    if ($request->filled('country')) {
+    if ($request->filled('country') && $request->country !== 'undefined') {
         $query->where('target_country', $request->country);
     }
 
-    $results = $query->get();
-    
-    \Log::info("Found " . $results->count() . " verified mentors.");
-
-    return response()->json($results);
+    return response()->json($query->get());
 }
 }

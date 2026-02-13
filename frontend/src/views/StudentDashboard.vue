@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 
@@ -11,20 +11,37 @@ const mentors = ref([]);
 const message = ref('');
 const error = ref(false);
 
+const searchQuery = ref({
+    subject: '',
+    university: ''
+});
+
 const profile = ref({
     target_university: '',
     target_country: ''
 });
 
+const filteredMentors = computed(() => {
+    return mentors.value.filter(mentor => {
+        const matchesSubject = !searchQuery.value.subject || 
+            mentor.subject_expertise?.toLowerCase().includes(searchQuery.value.subject.toLowerCase());
+            
+        const matchesUniversity = !searchQuery.value.university || 
+            mentor.university?.name?.toLowerCase().includes(searchQuery.value.university.toLowerCase()) || 
+            mentor.target_university?.toLowerCase().includes(searchQuery.value.university.toLowerCase());
+
+        return matchesSubject && matchesUniversity;
+    });
+});
+
 const fetchMentors = async () => {
     try {
         const response = await axios.get('http://localhost:8000/api/mentors/directory');
-        
-        mentors.value = response.data.filter(mentor => Number(mentor.is_verified) === 1);
-        
-        console.log("Verified Mentors found:", mentors.value.length);
+        const rawData = Array.isArray(response.data) ? response.data : (response.data.mentors || []);
+        mentors.value = rawData.filter(mentor => Number(mentor.is_verified) === 1);
+        console.log("Verified Mentors initialized:", mentors.value.length);
     } catch (err) {
-        console.error("Directory API failed. Check if Controller is imported in api.php", err);
+        console.error("Directory Load Error. Check api.php import.", err);
     } finally {
         mentorsLoading.value = false;
     }
@@ -51,7 +68,7 @@ const updateProfile = async () => {
         message.value = "Profile updated successfully!";
     } catch (err) {
         error.value = true;
-        message.value = "Failed to update profile. Please try again.";
+        message.value = "Failed to update profile.";
     } finally {
         loading.value = false;
     }
@@ -83,98 +100,75 @@ onMounted(() => {
     </header>
 
     <div class="profile-card">
-       <h2>Edit My Educational Goals</h2>
-       </div>
+      <h2>Edit My Educational Goals</h2>
+      <div class="form-group">
+        <label>Target University</label>
+        <input v-model="profile.target_university" type="text" placeholder="e.g. City St George's">
+      </div>
+      <div class="form-group">
+        <label>Target Country</label>
+        <input v-model="profile.target_country" type="text" placeholder="e.g. United Kingdom">
+      </div>
+      <button @click="updateProfile" :disabled="loading" class="save-btn">
+        {{ loading ? 'Saving...' : 'Update Goals' }}
+      </button>
+      <p v-if="message" :class="{ 'status-msg': true, 'error-text': error }">{{ message }}</p>
+    </div>
 
     <div class="directory-section">
-  <div class="section-header">
-    <div class="title-row">
+      <div class="section-header">
         <h2>Available Verified Mentors</h2>
-        <span class="mentor-count">{{ mentors.length }} mentors found</span>
-    </div>
-    <p class="subtitle">Connect with alumni who have successfully navigated your target pathway.</p>
-  </div>
-
-  <div v-if="mentorsLoading" class="loading-state">
-    Finding mentors...
-  </div>
-  
-
-      <div v-else class="mentor-grid">
-        <div v-for="mentor in mentors" :key="mentor.id" class="mentor-card">
-          <div class="mentor-avatar">
-            <img 
-              :src="mentor.profile_photo_path ? `http://localhost:8000/storage/${mentor.profile_photo_path}` : 'https://via.placeholder.com/80'" 
-              alt="Mentor"
-            />
-            <span class="verify-tag">Verified ✅</span>
-          </div>
-          <div class="mentor-info">
-            <h3>{{ mentor.user?.name }}</h3>
-            <p class="expertise">{{ mentor.subject_expertise }}</p>
-            <p class="bio-snippet">{{ mentor.bio || 'Alumni mentor ready to help.' }}</p>
-            <button class="connect-btn">View Profile</button>
-          </div>
-        </div>
-        
-        <div v-if="mentors.length === 0" class="empty-state">
-          No verified mentors available at this time.
+        <div class="search-filters">
+          <input v-model="searchQuery.subject" placeholder="Search by Expertise..." class="search-input">
+          <input v-model="searchQuery.university" placeholder="Search by University..." class="search-input">
         </div>
       </div>
+
+      <div v-if="mentorsLoading" class="loading-state">
+        Finding mentors...
+      </div>
+
+<div v-else class="mentor-grid">
+  <div v-for="mentor in filteredMentors" :key="mentor.id" class="mentor-card">
+    <div class="mentor-avatar">
+       <img :src="mentor.profile_photo_path ? `http://localhost:8000/storage/${mentor.profile_photo_path}` : 'https://via.placeholder.com/80'">
+       <span class="verify-tag">Verified ✅</span>
+    </div>
+    <div class="mentor-info">
+       <h3>{{ mentor.user?.name || 'Alumni Mentor' }}</h3>
+       <p class="expertise">{{ mentor.subject_expertise }}</p>
+       <button class="connect-btn">View Profile</button>
+    </div>
+  </div>
+  
+  <div v-if="filteredMentors.length === 0" class="empty-state">
+    No verified mentors found.
+  </div>
+</div>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* Keeping your existing styles */
 .dashboard-wrapper { padding: 3rem 5%; max-width: 900px; margin: 0 auto; }
 .header-main { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
 .profile-card { background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-top: 2rem; }
-.card-header { margin-bottom: 2rem; }
-.subtitle { color: #6b7280; font-size: 0.95rem; }
 .form-group { margin-bottom: 1.5rem; }
 label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151; }
 input { width: 100%; padding: 12px; border: 1px solid #DEE4FE; border-radius: 8px; font-size: 1rem; }
 .save-btn { background-color: #3e55f8; color: white; padding: 14px 28px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
 .save-btn:hover { background-color: #2DE1AA; }
 .logout-btn { color: #ef4444; border: 1px solid #ef4444; background: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-.status-message.success { color: #3e55f8; margin-top: 1rem; font-weight: 600; }
 .directory-section { margin-top: 3rem; }
 .section-header { margin-bottom: 1.5rem; }
-.mentor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-
-.mentor-card { 
-  background: white; 
-  border-radius: 12px; 
-  padding: 1.5rem; 
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
-  border: 1px solid #DEE4FE;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  transition: transform 0.2s;
-}
-
-.mentor-card:hover { transform: translateY(-5px); }
-
-.mentor-avatar { position: relative; margin-bottom: 1rem; }
+.search-filters { display: flex; gap: 1rem; margin-bottom: 1rem; }
+.search-input { flex: 1; }
+.mentor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
+.mentor-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #DEE4FE; text-align: center; }
 .mentor-avatar img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #3e55f8; }
-
-.verify-tag { 
-  position: absolute; 
-  bottom: -5px; 
-  right: -10px; 
-  background: #2DE1AA; 
-  color: white; 
-  font-size: 0.7rem; 
-  padding: 2px 8px; 
-  border-radius: 20px; 
-  font-weight: 700; 
-}
-
-.expertise { color: #3e55f8; font-weight: 700; font-size: 0.9rem; margin: 0.5rem 0; }
-.bio-snippet { font-size: 0.85rem; color: #6b7280; margin-bottom: 1rem; }
-.connect-btn { background: #3e55f8; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; }
-
-.loading-state, .empty-state { text-align: center; padding: 2rem; color: #6b7280; }
+.verify-tag { background: #2DE1AA; color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
+.expertise { color: #3e55f8; font-weight: 700; }
+.connect-btn { background: #3e55f8; color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; cursor: pointer; }
+.loading-state, .empty-state { grid-column: 1 / -1; text-align: center; padding: 2rem; color: #6b7280; }
 </style>
