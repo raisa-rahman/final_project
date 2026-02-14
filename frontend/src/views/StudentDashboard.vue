@@ -137,7 +137,12 @@ onMounted(() => {
     <div class="mentor-info">
        <h3>{{ mentor.user?.name || 'Alumni Mentor' }}</h3>
        <p class="expertise">{{ mentor.subject_expertise }}</p>
-       <button class="connect-btn">View Profile</button>
+        <button 
+        @click="router.push(`/mentor/profile/${mentor.id}`)" 
+        class="connect-btn"
+        >
+        View Profile
+        </button>    
     </div>
   </div>
   

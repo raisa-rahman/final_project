@@ -44,6 +44,12 @@ const router = createRouter({
       name: 'AdminDashboard', 
       component: () => import('../views/AdminDashboard.vue'),
       beforeEnter: guardByRole('admin', '/staff-portal')
+    },
+    {
+      path: '/mentor/profile/:id',
+      name: 'MentorProfile',
+      component: () => import('../views/IndividualProfile.vue'),
+      beforeEnter: guardByRole('student', '/student/login') 
     }
   ]
 });

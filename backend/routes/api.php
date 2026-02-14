@@ -86,3 +86,5 @@ Route::post('/login', function (Request $request) {
 
     return response()->json(['message' => 'Invalid credentials'], 401);
 });
+
+Route::get('/mentors/profile/{id}', [DirectoryController::class, 'showPublic']);
