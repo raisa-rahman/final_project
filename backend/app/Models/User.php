@@ -64,4 +64,9 @@ public function studentProfile()
         }
     });
     }
+
+    public function favorites()
+{
+    return $this->hasMany(Favorite::class);
+}
 }

@@ -9,6 +9,7 @@ use App\Http\Controllers\DirectoryController;
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mentors/directory', [App\Http\Controllers\DirectoryController::class, 'index']);
     Route::post('/admin/mentors/{profile}/toggle-verify', [MentorProfileController::class, 'toggleVerify']);
+    Route::post('/mentors/{id}/favorite', [StudentProfileController::class, 'toggleFavorite']);
 });
 
 Route::get('/mentors/directory', [DirectoryController::class, 'index']);
@@ -88,3 +89,4 @@ Route::post('/login', function (Request $request) {
 });
 
 Route::get('/mentors/profile/{id}', [DirectoryController::class, 'showPublic']);
+Route::get('/student/favorites', [StudentProfileController::class, 'getFavorites']);

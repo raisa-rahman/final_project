@@ -42,7 +42,7 @@ const isDashboard = computed(() => route.path === '/dashboard' || route.path ===
 
 <style scoped>
 .main-header {
-  background-color: #1a1f3c; /* Brand Navy */
+  background-color: #1a1f3c; 
   width: 100%;
   position: fixed;
   top: 0;
@@ -71,12 +71,12 @@ const isDashboard = computed(() => route.path === '/dashboard' || route.path ===
 .nav-container {
   display: flex;
   align-items: center;
-  gap: 1.5rem; /* Gap between groups and dividers */
+  gap: 1.5rem; 
 }
 
 .nav-group {
   display: flex;
-  gap: 1rem; /* Gap between Sign up and Log In */
+  gap: 1rem;
 }
 
 .nav-item {
@@ -88,7 +88,7 @@ const isDashboard = computed(() => route.path === '/dashboard' || route.path ===
 }
 
 .nav-item:hover {
-  color: #3e55f8; /* Brand Blue on hover */
+  color: #3e55f8;
 }
 
 .divider {
@@ -98,13 +98,13 @@ const isDashboard = computed(() => route.path === '/dashboard' || route.path ===
 }
 
 .staff-link {
-  color: #9ca3af; /* Muted gray for internal staff portal */
+  color: #9ca3af;
   text-decoration: none;
   font-size: 0.85rem;
   font-weight: 500;
 }
 
 main {
-  padding-top: 80px; /* Offset for the fixed header */
+  padding-top: 80px; 
 }
 </style>
