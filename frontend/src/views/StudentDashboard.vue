@@ -194,20 +194,18 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Main Container - takes up full width */
 .dashboard-container {
   display: flex;
   gap: 2rem;
   padding: 2rem;
-  width: 100%; /* Ensure it spans the whole screen */
-  max-width: 100vw; /* Remove narrow 900px limits */
+  width: 100%; 
+  max-width: 100vw; 
   margin: 0;
   align-items: flex-start;
   background-color: #fbfcff;
   min-height: 100vh;
 }
 
-/* Sidebar - fixed width on the left */
 .sidebar {
   flex: 0 0 320px;
   position: sticky;
@@ -217,7 +215,6 @@ onMounted(() => {
   gap: 1.5rem;
 }
 
-/* Main Content - grows to fill all remaining horizontal space */
 .main-content {
   flex: 1;
   display: flex;
@@ -225,7 +222,6 @@ onMounted(() => {
   gap: 2rem;
 }
 
-/* Header Styles */
 .header-main {
   display: flex;
   justify-content: space-between;
@@ -243,7 +239,6 @@ onMounted(() => {
   font-weight: 600;
 }
 
-/* Profile and Saved Cards */
 .profile-card, .saved-mentors-section {
   background: white;
   padding: 2rem;
@@ -267,10 +262,8 @@ input { width: 100%; padding: 10px; border: 1px solid #DEE4FE; border-radius: 8p
   width: 100%;
 }
 
-/* Directory and Grid */
 .mentor-grid {
   display: grid;
-  /* Adjusts number of columns automatically based on screen width */
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
 }
@@ -321,7 +314,6 @@ input { width: 100%; padding: 10px; border: 1px solid #DEE4FE; border-radius: 8p
   margin-top: 1rem;
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
   .dashboard-container { flex-direction: column; padding: 1rem; }
   .sidebar { flex: 1; width: 100%; position: static; }
