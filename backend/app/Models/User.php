@@ -23,12 +23,11 @@ class User extends Authenticatable
         'role',
     ];
     
-protected $with = ['mentorProfile', 'studentProfile'];
+    protected $with = ['mentorProfile', 'studentProfile'];
 
-public function studentProfile()
-{
-    return $this->hasOne(StudentProfile::class);
-}
+    public function studentProfile(){
+        return $this->hasOne(StudentProfile::class);
+    }
 
 /**
      * The attributes that should be hidden for serialization.
@@ -45,19 +44,18 @@ public function studentProfile()
      *
      * @return array<string, string>
      */
-    protected function casts(): array
-    {
+    protected function casts(): array{
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
-    public function mentorProfile()
-    {
+
+    public function mentorProfile(){
         return $this->hasOne(MentorProfile::class);
     }
-    protected static function booted()
-{
+
+    protected static function booted(){
     static::created(function ($user) {
         if ($user->role === 'student') {
             \App\Models\StudentProfile::create(['user_id' => $user->id]);
@@ -65,8 +63,7 @@ public function studentProfile()
     });
     }
 
-    public function favorites()
-{
+    public function favorites(){
     return $this->hasMany(Favorite::class);
-}
+    }
 }

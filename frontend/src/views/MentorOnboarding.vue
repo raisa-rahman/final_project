@@ -35,21 +35,18 @@ const handleSubmit = async () => {
 
 const handleLogin = async () => {
     try {
-        await axios.get('http://localhost:8000/sanctum/csrf-cookie');
-        
-        const response = await axios.post('http://localhost:8000/api/login', form.value);
-
-        const userData = response.data.user;
-        
-        if (userData && userData.role === 'mentor') {
-            localStorage.setItem('user', JSON.stringify(userData));
-            router.push('/mentor/login/dashboard'); 
-        } else {
-            alert('Access Denied: Mentor account required.');
+        await axios.get('http://localhost:8000/sanctum/csrf-cookie', { withCredentials: true });
+        const response = await axios.post('http://localhost:8000/api/login', {
+            email: form.value.email,     
+            password: form.value.password 
+        }, { withCredentials: true });
+        if (response.data.status === 'success') {
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+            router.push('/mentor/login/dashboard');
         }
-    } catch (error) {
-        console.error("Mentor Auth Error:", error.response?.data || error.message);
-        alert('Login failed. Please check your credentials.');
+    } catch (err) {
+        console.error("Mentor Auth Error:", err.response?.data || err.message);
+        alert("Login failed. Check your credentials.");
     }
 };
 
@@ -65,7 +62,6 @@ const toggleMode = (newMode) => {
 
 <template>
   <div class="auth-wrapper">
-
     <div class="onboarding-container">
       <div class="brand-header">
         <img :src="logoUrl" alt="Student Circus" class="logo">
@@ -78,12 +74,10 @@ const toggleMode = (newMode) => {
 
       <div class="form-content">
         <h1>{{ mode === 'signup' ? 'Join as a Mentor' : 'Mentor Login' }}</h1>
-        <p>{{ mode === 'signup' ? 'Share your expertise with international students.' : 'Welcome back to your mentor portal.' }}</p>
+        <p>{{ mode === 'signup' ? 'Share your expertise.' : 'Welcome back.' }}</p>
         
-<form @submit.prevent="handleSubmit">
-
-<form @submit.prevent="mode === 'signup' ? handleSubmit() : handleLogin()">
-            <label v-if="mode === 'signup'">
+        <form @submit.prevent="mode === 'signup' ? handleSubmit() : handleLogin()">
+          <label v-if="mode === 'signup'">
             Full Name:
             <input v-model="form.name" type="text" required placeholder="e.g. Jane Doe">
           </label>
@@ -107,7 +101,6 @@ const toggleMode = (newMode) => {
             {{ mode === 'signup' ? 'Submit for Verification' : 'Sign In' }} →
           </button>
         </form>
-        </form>
 
         <p class="footer-note" v-if="mode === 'signup'">
           By signing up, you agree to our <a href="#">Mentor Terms</a>
@@ -121,7 +114,7 @@ const toggleMode = (newMode) => {
 @import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@700&display=swap');
 
 .auth-wrapper {
-  background-color: #f8faff; /* Light brand tint */
+  background-color: #f8faff; 
   min-height: 100vh;
 }
 
@@ -172,14 +165,14 @@ const toggleMode = (newMode) => {
 
 .tabs button.active {
   color: #3e55f8;
-  border-bottom: 3px solid #3e55f8; /* Signature underline */
+  border-bottom: 3px solid #3e55f8; 
 }
 
 .form-content { padding: 2rem 3rem; }
 
 h1 {
   font-family: 'Red Hat Display', sans-serif;
-  color: #1a1f3c; /* Dark navy brand color */
+  color: #1a1f3c; 
   margin-bottom: 0.5rem;
   font-size: 1.5rem;
 }
@@ -226,7 +219,7 @@ input:focus {
 }
 
 .submit-btn:hover {
-  background-color: #2DE1AA; /* Teal hover effect */
+  background-color: #2DE1AA; 
 }
 
 .footer-note {

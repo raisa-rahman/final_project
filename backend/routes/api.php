@@ -10,6 +10,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mentors/directory', [App\Http\Controllers\DirectoryController::class, 'index']);
     Route::post('/admin/mentors/{profile}/toggle-verify', [MentorProfileController::class, 'toggleVerify']);
     Route::post('/mentors/{id}/favorite', [StudentProfileController::class, 'toggleFavorite']);
+    Route::get('/mentor/profile', [App\Http\Controllers\MentorProfileController::class, 'show']);
+    Route::put('/mentor/profile', [App\Http\Controllers\MentorProfileController::class, 'update']);
+    Route::get('/availabilities', [App\Http\Controllers\AvailabilityController::class, 'index']);
+    Route::post('/availabilities', [App\Http\Controllers\AvailabilityController::class, 'store']);
+    Route::delete('/availabilities/{id}', [App\Http\Controllers\AvailabilityController::class, 'destroy']);
+    Route::get('/mentor/default-availability', [App\Http\Controllers\DefaultAvailabilityController::class, 'index']);
+    Route::post('/mentor/default-availability', [App\Http\Controllers\DefaultAvailabilityController::class, 'store']);
+    Route::put('/mentor/default-availability/{id}', [DefaultAvailabilityController::class, 'update']);
+    Route::get('/mentors/profile/{id}', [DirectoryController::class, 'showPublic']);
+    Route::get('/student/favorites', [StudentProfileController::class, 'getFavorites']);
+    Route::put('/mentor/default-availability/{id}', [App\Http\Controllers\DefaultAvailabilityController::class, 'update']);
+    Route::delete('/mentor/default-availability/{id}', [App\Http\Controllers\DefaultAvailabilityController::class, 'destroy']);
 });
 
 Route::get('/mentors/directory', [DirectoryController::class, 'index']);
@@ -87,6 +99,3 @@ Route::post('/login', function (Request $request) {
 
     return response()->json(['message' => 'Invalid credentials'], 401);
 });
-
-Route::get('/mentors/profile/{id}', [DirectoryController::class, 'showPublic']);
-Route::get('/student/favorites', [StudentProfileController::class, 'getFavorites']);

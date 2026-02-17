@@ -25,4 +25,8 @@ class MentorProfile extends Model
     public function availabilities(){
         return $this->hasMany(Availability::class);
     }
+
+    public function defaultAvailabilities(){
+        return $this->hasMany(DefaultAvailability::class);
+    }
 }
