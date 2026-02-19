@@ -117,10 +117,22 @@ const fetchFavorites = async () => {
     }
 };
 
+const sentRequests = ref([]);
+
+const fetchSentRequests = async () => {
+    try {
+        const response = await axios.get('http://localhost:8000/api/student/meetings');
+        sentRequests.value = response.data;
+    } catch (err) {
+        console.error("Failed to load sent requests", err);
+    }
+};
+
 onMounted(() => {
     fetchProfile();
     fetchMentors();
     fetchFavorites(); 
+    fetchSentRequests(); 
 });
 
 </script>
@@ -151,6 +163,34 @@ onMounted(() => {
         </ul>
       </div>
     </aside>
+
+    <div class="booking-tracker-section">
+    <div class="section-header">
+        <h2>Your Meeting Requests</h2>
+        <p class="subtitle">Track the status of sessions you've requested from mentors.</p>
+    </div>
+
+    <div v-if="sentRequests.length === 0" class="empty-state-card">
+        <p>You haven't requested any sessions yet. Browse mentors to get started!</p>
+    </div>
+
+    <div v-else class="request-list">
+        <div v-for="request in sentRequests" :key="request.id" class="request-item">
+            <div class="mentor-meta">
+                <strong>{{ request.mentor_name }}</strong>
+                <span>{{ request.date }} | {{ request.start_time.substring(0,5) }}</span>
+            </div>
+            
+            <div class="status-container">
+                <span class="status-pill" :class="request.status">
+                    {{ request.status.charAt(0).toUpperCase() + request.status.slice(1) }}
+                </span>
+                <p v-if="request.status === 'pending'" class="status-note">Waiting for mentor response</p>
+                <p v-if="request.status === 'approved'" class="status-note success">Confirmed! Check your email for links.</p>
+            </div>
+        </div>
+    </div>
+</div>
 
     <main class="main-content">
       <header class="dashboard-header">
@@ -317,5 +357,53 @@ input { width: 100%; padding: 10px; border: 1px solid #DEE4FE; border-radius: 8p
 @media (max-width: 1024px) {
   .dashboard-container { flex-direction: column; padding: 1rem; }
   .sidebar { flex: 1; width: 100%; position: static; }
+}
+
+.booking-tracker-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid #DEE4FE;
+    margin-bottom: 2rem;
+}
+
+.request-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+
+.request-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.2rem;
+    border: 1px solid #f0f2f5;
+    border-radius: 10px;
+    background: #fdfdff;
+}
+
+.mentor-meta { display: flex; flex-direction: column; }
+.mentor-meta strong { color: #1a1f3c; font-size: 1.1rem; }
+.mentor-meta span { color: #6b7280; font-size: 0.9rem; }
+
+.status-container { text-align: right; }
+
+.status-pill {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.pending { background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; }
+.approved { background: #f0fdf4; color: #15803d; border: 1px solid #dcfce7; }
+.declined { background: #fef2f2; color: #b91c1c; border: 1px solid #fee2e2; }
+
+.status-note { font-size: 0.75rem; margin-top: 4px; color: #9ca3af; }
+.status-note.success { color: #15803d; font-weight: 600; }
+
+.empty-state-card {
+    text-align: center;
+    padding: 3rem;
+    color: #9ca3af;
+    font-style: italic;
 }
 </style>

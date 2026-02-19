@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MentorProfileController;
 use App\Http\Controllers\DirectoryController;
+use App\Http\Controllers\MeetingController;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mentors/directory', [App\Http\Controllers\DirectoryController::class, 'index']);
@@ -22,9 +23,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/student/favorites', [StudentProfileController::class, 'getFavorites']);
     Route::put('/mentor/default-availability/{id}', [App\Http\Controllers\DefaultAvailabilityController::class, 'update']);
     Route::delete('/mentor/default-availability/{id}', [App\Http\Controllers\DefaultAvailabilityController::class, 'destroy']);
+    Route::get('/auth/google', [GoogleCalendarController::class, 'redirectToGoogle']);
+    Route::get('/auth/google/callback', [GoogleCalendarController::class, 'handleGoogleCallback']);
+    Route::get('/mentor/google-sync', [GoogleCalendarController::class, 'syncAvailability']);
+    Route::post('/meetings/request', [MeetingController::class, 'store']);
+    Route::get('/student/meetings', [App\Http\Controllers\MeetingController::class, 'studentIndex']);
+    Route::get('/mentor/meetings/requests', [MeetingController::class, 'requests']);
+    Route::get('/mentor/meetings/upcoming', [MeetingController::class, 'upcoming']);
+    Route::post('/mentor/meetings/{id}/{action}', [MeetingController::class, 'handleAction']);
 });
 
 Route::get('/mentors/directory', [DirectoryController::class, 'index']);
+
 
 Route::post('/admin/mentors/{profile}/toggle-verify', function (App\Models\MentorProfile $profile) {
     $profile->is_verified = $profile->is_verified ? 0 : 1;
