@@ -31,11 +31,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mentor/meetings/requests', [MeetingController::class, 'requests']);
     Route::get('/mentor/meetings/upcoming', [MeetingController::class, 'upcoming']);
     Route::post('/mentor/meetings/{id}/{action}', [MeetingController::class, 'handleAction']);
+    Route::post('/mentor/meetings/{id}/approve', [MeetingController::class, 'approve']);
 });
 
 Route::get('/mentors/directory', [DirectoryController::class, 'index']);
-
-
 Route::post('/admin/mentors/{profile}/toggle-verify', function (App\Models\MentorProfile $profile) {
     $profile->is_verified = $profile->is_verified ? 0 : 1;
     $profile->save();

@@ -37,9 +37,14 @@ const fetchData = async () => {
 
 const handleMeetingAction = async (id, action) => {
     try {
-        await axios.post(`http://localhost:8000/api/mentor/meetings/${id}/${action}`);
-        fetchData(); 
+        const url = action === 'approve' 
+            ? `http://localhost:8000/api/mentor/meetings/${id}/approve` 
+            : `http://localhost:8000/api/mentor/meetings/${id}/decline`;
+
+        await axios.post(url);
+        fetchData();
     } catch (err) {
+        console.error("Action failed:", err);
         alert("Error updating meeting status.");
     }
 };
@@ -64,6 +69,7 @@ const handleLogout = async () => {
 };
 
 onMounted(fetchData);
+
 </script>
 
 <template>
@@ -123,21 +129,31 @@ onMounted(fetchData);
             </div>
         </div>
 
-        <div class="verification-card">
-            <h2>Confirmed Meetings</h2>
-            <div v-if="upcomingMeetings.length === 0" class="empty-state">No upcoming meetings.</div>
-            <div v-for="meeting in upcomingMeetings" :key="meeting.id" class="meeting-item confirmed">
-                <div class="meeting-info">
-                    <strong>{{ meeting.student_name }}</strong>
-                    <span>{{ meeting.date }} at {{ meeting.start_time }}</span>
-                </div>
+ <div class="verification-card">
+    <h2>Confirmed Meetings</h2>
+    <div v-if="upcomingMeetings.length === 0" class="empty-state">No upcoming meetings.</div>
+    
+    <div v-for="meeting in upcomingMeetings" :key="meeting.id" class="meeting-item confirmed">
+        <div class="meeting-info">
+            <strong>{{ meeting.student_name }}</strong>
+            <span>{{ meeting.date }} at {{ meeting.start_time.substring(0,5) }}</span>
+            
+            <div class="meeting-actions">
+                <a v-if="meeting.meeting_link" 
+                   :href="meeting.meeting_link" 
+                   target="_blank" 
+                   class="join-btn">
+                    🎥 Join Meeting
+                </a>
                 <button @click="addToGoogleCalendar(meeting)" class="google-sync-btn">
                     🗓️ Sync to Google
                 </button>
             </div>
         </div>
     </div>
-  </div>
+</div>
+    </div>
+</div>
 </template>
 
 <style scoped>
@@ -369,4 +385,31 @@ input, .bio-area { width: 100%; padding: 12px; border: 1px solid #DEE4FE; border
 }
 
 .empty-state { color: #9ca3af; font-style: italic; text-align: center; padding: 1rem; }
+
+.meeting-actions { 
+    display: flex; 
+    gap: 10px; 
+    margin-top: 10px; 
+    align-items: center; 
+}
+
+.join-btn {
+    background: #e6fffa;
+    color: #065f46;
+    border: 1px solid #2de1aa;
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-flex; 
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.join-btn:hover {
+    background: #2de1aa;
+    color: white;
+}
+
 </style>

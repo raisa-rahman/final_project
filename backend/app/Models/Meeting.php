@@ -13,7 +13,8 @@ class Meeting extends Model
         'start_time',
         'end_time',
         'message',
-        'status'
+        'status',
+        'meeting_link' 
     ];
 
     public function student()

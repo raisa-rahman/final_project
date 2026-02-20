@@ -175,20 +175,25 @@ onMounted(() => {
     </div>
 
     <div v-else class="request-list">
-        <div v-for="request in sentRequests" :key="request.id" class="request-item">
-            <div class="mentor-meta">
-                <strong>{{ request.mentor_name }}</strong>
-                <span>{{ request.date }} | {{ request.start_time.substring(0,5) }}</span>
-            </div>
-            
-            <div class="status-container">
-                <span class="status-pill" :class="request.status">
-                    {{ request.status.charAt(0).toUpperCase() + request.status.slice(1) }}
-                </span>
-                <p v-if="request.status === 'pending'" class="status-note">Waiting for mentor response</p>
-                <p v-if="request.status === 'approved'" class="status-note success">Confirmed! Check your email for links.</p>
-            </div>
-        </div>
+<div v-for="request in sentRequests" :key="request.id" class="request-item">
+    <div class="mentor-meta">
+        <strong>{{ request.mentor_name }}</strong>
+        <span>{{ request.date }} | {{ request.start_time.substring(0,5) }}</span>
+    </div>
+    
+    <div class="status-container">
+        <a v-if="request.status === 'approved' && request.meeting_link" 
+           :href="request.meeting_link" 
+           target="_blank" 
+           class="join-btn-student">
+            🎥 Join Session
+        </a>
+
+        <span class="status-pill" :class="request.status">
+            {{ request.status.charAt(0).toUpperCase() + request.status.slice(1) }}
+        </span>
+    </div>
+</div>
     </div>
 </div>
 
