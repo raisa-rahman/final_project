@@ -32,6 +32,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mentor/meetings/upcoming', [MeetingController::class, 'upcoming']);
     Route::post('/mentor/meetings/{id}/{action}', [MeetingController::class, 'handleAction']);
     Route::post('/mentor/meetings/{id}/approve', [MeetingController::class, 'approve']);
+    Route::post('/meetings/{id}/reschedule', [MeetingController::class, 'reschedule']);
+    Route::post('/meetings/{id}/cancel', [MeetingController::class, 'cancel']);
 });
 
 Route::get('/mentors/directory', [DirectoryController::class, 'index']);

@@ -128,6 +128,93 @@ const fetchSentRequests = async () => {
     }
 };
 
+const addToGoogleCalendar = (request) => {
+    const mentorName = encodeURIComponent(request.mentor_name);
+    const start = request.date.replace(/-/g, '') + 'T' + request.start_time.replace(/:/g, '') + '00';
+    const end = request.date.replace(/-/g, '') + 'T' + (parseInt(request.start_time.split(':')[0]) + 1) + request.start_time.split(':')[1] + '00';
+    
+    const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=Mentorship+with+${mentorName}&dates=${start}/${end}&details=Student+Circus+Mentorship+Session`;
+    
+    window.open(url, '_blank');
+};
+
+const cancelMeeting = async (id) => {
+    if (!confirm("Are you sure you want to cancel this mentorship session?")) return;
+    try {
+        await axios.post(`http://localhost:8000/api/meetings/${id}/cancel`);
+        fetchSentRequests(); 
+    } catch (err) {
+        console.error("Cancellation failed", err);
+    }
+};
+
+const initiateReschedule = async (meeting) => {
+    const newDate = prompt("Step 1/2: Enter new date (YYYY-MM-DD):", meeting.date);
+    if (!newDate) return;
+
+    const newTime = prompt("Step 2/2: Enter new start time (HH:MM):", meeting.start_time.substring(0, 5));
+    if (!newTime) return;
+    
+    try {
+        await axios.post(`http://localhost:8000/api/meetings/${meeting.id}/reschedule`, {
+            date: newDate,
+            start_time: newTime
+        });
+        
+        alert("Reschedule request sent! The mentor needs to approve the new time.");
+        fetchSentRequests(); 
+    } catch (err) {
+        console.error(err);
+        alert("Reschedule failed. Please ensure the date is today or in the future.");
+    }
+};
+
+const formatLongDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-GB', { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+    }).replace(/(\d+)/, (day) => {
+        const d = parseInt(day);
+        if (d > 3 && d < 21) return d + 'th';
+        switch (d % 10) {
+            case 1:  return d + "st";
+            case 2:  return d + "nd";
+            case 3:  return d + "rd";
+            default: return d + "th";
+        }
+    });
+};
+
+const editingMeetingId = ref(null);
+const editData = ref({ date: '', start_time: '' });
+
+const format12Hour = (timeStr) => {
+    if (!timeStr) return '';
+    const [hours, minutes] = timeStr.split(':');
+    const suffix = hours >= 12 ? 'pm' : 'am';
+    const h12 = hours % 12 || 12;
+    return `${h12}:${minutes}${suffix}`;
+};
+
+const startEdit = (meeting) => {
+    editingMeetingId.value = meeting.id;
+    editData.value = { date: meeting.date, start_time: meeting.start_time.substring(0,5) };
+};
+
+const saveReschedule = async (id) => {
+    try {
+        await axios.post(`http://localhost:8000/api/meetings/${id}/reschedule`, editData.value);
+        editingMeetingId.value = null;
+        fetchSentRequests();
+        alert("Reschedule request sent for approval.");
+    } catch (err) {
+        alert("Error saving: Ensure the date is today or later.");
+    }
+};
+
 onMounted(() => {
     fetchProfile();
     fetchMentors();
@@ -175,27 +262,44 @@ onMounted(() => {
     </div>
 
     <div v-else class="request-list">
-<div v-for="request in sentRequests" :key="request.id" class="request-item">
-    <div class="mentor-meta">
-        <strong>{{ request.mentor_name }}</strong>
-        <span>{{ request.date }} | {{ request.start_time.substring(0,5) }}</span>
+    <div v-for="request in sentRequests" :key="request.id" class="request-item">
+    <div class="request-main">
+        <div class="mentor-meta">
+            <strong>{{ request.mentor_name }}</strong>
+            <span v-if="editingMeetingId !== request.id" class="date-display">
+                {{ formatLongDate(request.date) }} at {{ format12Hour(request.start_time) }}
+            </span>
+            <div v-else class="edit-inputs">
+                <input v-model="editData.date" type="date" class="resched-input">
+                <input v-model="editData.start_time" type="time" class="resched-input">
+            </div>
+        </div>
     </div>
-    
-    <div class="status-container">
-        <a v-if="request.status === 'approved' && request.meeting_link" 
-           :href="request.meeting_link" 
-           target="_blank" 
-           class="join-btn-student">
-            🎥 Join Session
-        </a>
 
-        <span class="status-pill" :class="request.status">
-            {{ request.status.charAt(0).toUpperCase() + request.status.slice(1) }}
+    <div class="card-footer">
+        <div class="action-row">
+            <template v-if="editingMeetingId !== request.id">
+                <button @click="startEdit(request)" class="btn-text">Reschedule</button>
+                <button @click="cancelMeeting(request.id)" class="btn-text danger">Cancel</button>
+            </template>
+            <template v-else>
+                <button @click="saveReschedule(request.id)" class="btn-text success">Save</button>
+                <button @click="editingMeetingId = null" class="btn-text">Back</button>
+            </template>
+        </div>
+        
+        <span class="status-pill-minimal" :class="request.status">
+            {{ request.status.toUpperCase() }}
         </span>
     </div>
-</div>
+
+    <div v-if="request.status === 'approved' && request.meeting_link" class="link-bar">
+        <a :href="request.meeting_link" target="_blank" class="join-pill">🎥 Join Jitsi</a>
+        <button @click="addToGoogleCalendar(request)" class="sync-pill">🗓️ Sync</button>
     </div>
 </div>
+        </div>
+    </div>
 
     <main class="main-content">
       <header class="dashboard-header">
@@ -410,5 +514,131 @@ input { width: 100%; padding: 10px; border: 1px solid #DEE4FE; border-radius: 8p
     padding: 3rem;
     color: #9ca3af;
     font-style: italic;
+}
+
+.booking-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+.join-btn-student {
+    background: #e6fffa;
+    color: #065f46;
+    border: 1px solid #2de1aa;
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.75rem;
+    font-weight: 700;
+    transition: all 0.2s;
+}
+
+.join-btn-student:hover { background: #2de1aa; color: white; }
+
+.sync-mini-btn {
+    background: white;
+    border: 1px solid #DEE4FE;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.sync-mini-btn:hover { border-color: #3e55f8; color: #3e55f8; }
+
+.request-item {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    border: 1px solid #DEE4FE;
+    border-radius: 12px;
+    background: white;
+    gap: 1rem;
+}
+
+.booking-content { display: flex; justify-content: space-between; align-items: flex-start; }
+
+.action-grid { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+
+.ui-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid #ddd;
+    background: white;
+    width: 100px;
+    text-align: center;
+}
+
+.ui-btn.secondary { border-color: #3e55f8; color: #3e55f8; }
+.ui-btn.danger { border-color: #ef4444; color: #ef4444; }
+.ui-btn.success { background: #2DE1AA; color: white; border: none; }
+
+.edit-inputs { display: flex; gap: 10px; margin-top: 8px; }
+.resched-input { padding: 5px; border: 1px solid #3e55f8; border-radius: 4px; font-family: inherit; }
+
+.booking-actions-footer {
+    display: flex;
+    gap: 12px;
+    padding-top: 1rem;
+    border-top: 1px dashed #DEE4FE;
+}
+
+.request-item {
+    background: white;
+    border: 1px solid #DEE4FE;
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.request-main { display: flex; justify-content: space-between; align-items: flex-start; }
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.8rem;
+    border-top: 1px solid #f0f3ff;
+}
+
+.action-row { display: flex; gap: 15px; }
+
+.btn-text {
+    background: none;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #3e55f8;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.btn-text.danger { color: #ef4444; }
+.btn-text.success { color: #2DE1AA; }
+.btn-text:hover { text-decoration: underline; }
+
+.status-pill-minimal {
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 4px;
+}
+
+.status-pill-minimal.pending { color: #F4BD3F; background: #fffbeb; }
+.status-pill-minimal.approved { color: #2DE1AA; background: #ecfdf5; }
+
+.link-bar { display: flex; gap: 10px; margin-top: 0.5rem; }
+.join-pill, .sync-pill {
+    font-size: 0.75rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: 600;
+    border: 1px solid #dee4fe;
 }
 </style>

@@ -68,6 +68,51 @@ const handleLogout = async () => {
     }
 };
 
+const editingMeetingId = ref(null);
+const editData = ref({ date: '', start_time: '', end_time: '' });
+const format12Hour = (timeStr) => {
+    if (!timeStr) return '';
+    const [hours, minutes] = timeStr.split(':');
+    const suffix = hours >= 12 ? 'pm' : 'am';
+    const h12 = hours % 12 || 12;
+    return `${h12}:${minutes}${suffix}`;
+};
+
+const formatLongDate = (dateStr) => {
+    const date = new Date(dateStr);
+    const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    let formatted = new Intl.DateTimeFormat('en-GB', options).format(date);
+    return formatted.replace(/\d+/, (day) => {
+        const d = parseInt(day);
+        if (d > 3 && d < 21) return d + 'th';
+        switch (d % 10) {
+            case 1:  return d + "st";
+            case 2:  return d + "nd";
+            case 3:  return d + "rd";
+            default: return d + "th";
+        }
+    });
+};
+
+const startEdit = (meeting) => {
+    editingMeetingId.value = meeting.id;
+    editData.value = { 
+        date: meeting.date, 
+        start_time: meeting.start_time.substring(0, 5),
+        end_time: meeting.end_time ? meeting.end_time.substring(0, 5) : '' 
+    };
+};
+
+const saveReschedule = async (id) => {
+    try {
+        await axios.post(`http://localhost:8000/api/meetings/${id}/reschedule`, editData.value);
+        editingMeetingId.value = null;
+        fetchData(); 
+    } catch (err) {
+        alert("Error: Ensure the date is today or later.");
+    }
+};
+
 onMounted(fetchData);
 
 </script>
@@ -115,40 +160,84 @@ onMounted(fetchData);
 
     <div class="grid-layout meetings-section">
         <div class="profile-card">
-            <h2>Meeting Requests</h2>
-            <div v-if="meetingRequests.length === 0" class="empty-state">No pending requests.</div>
-            <div v-for="req in meetingRequests" :key="req.id" class="meeting-item">
-                <div class="meeting-info">
-                    <strong>{{ req.student_name }}</strong>
-                    <span>{{ req.date }} | {{ req.start_time }}</span>
+    <h2>Meeting Requests</h2>
+    <div v-if="meetingRequests.length === 0" class="empty-state">No pending requests.</div>
+    
+    <div v-for="req in meetingRequests" :key="req.id" class="meeting-item-card">
+        <div class="booking-content">
+            <div class="meeting-info">
+                <strong>{{ req.student_name }}</strong>
+                
+                <span v-if="editingMeetingId !== req.id">
+                    {{ formatLongDate(req.date) }} at {{ format12Hour(req.start_time) }}
+                </span>
+
+                <div v-else class="edit-inputs">
+                    <input v-model="editData.date" type="date" class="resched-input">
+                    <input v-model="editData.start_time" type="time" class="resched-input">
                 </div>
-                <div class="action-buttons">
-                    <button @click="handleMeetingAction(req.id, 'approve')" class="approve-btn">Accept</button>
-                    <button @click="handleMeetingAction(req.id, 'decline')" class="decline-btn">Decline</button>
-                </div>
+            </div>
+
+            <div class="action-row-horizontal">
+                <template v-if="editingMeetingId !== req.id">
+                    <button @click="handleMeetingAction(req.id, 'approve')" class="btn-text success">Accept</button>
+                    <button @click="startEdit(req)" class="btn-text">Reschedule</button>
+                    <button @click="handleMeetingAction(req.id, 'decline')" class="btn-text danger">Decline</button>
+                </template>
+                <template v-else>
+                    <button @click="saveReschedule(req.id)" class="btn-text success">Save</button>
+                    <button @click="editingMeetingId = null" class="btn-text">Back</button>
+                </template>
             </div>
         </div>
+    </div>
+</div>
 
- <div class="verification-card">
+ <<div class="verification-card">
     <h2>Confirmed Meetings</h2>
     <div v-if="upcomingMeetings.length === 0" class="empty-state">No upcoming meetings.</div>
-    
-    <div v-for="meeting in upcomingMeetings" :key="meeting.id" class="meeting-item confirmed">
-        <div class="meeting-info">
-            <strong>{{ meeting.student_name }}</strong>
-            <span>{{ meeting.date }} at {{ meeting.start_time.substring(0,5) }}</span>
-            
-            <div class="meeting-actions">
-                <a v-if="meeting.meeting_link" 
-                   :href="meeting.meeting_link" 
-                   target="_blank" 
-                   class="join-btn">
-                    🎥 Join Meeting
-                </a>
-                <button @click="addToGoogleCalendar(meeting)" class="google-sync-btn">
-                    🗓️ Sync to Google
-                </button>
+
+    <div v-for="meeting in upcomingMeetings" :key="meeting.id" class="meeting-item-card confirmed">
+        <div class="booking-content">
+            <div class="meeting-info">
+                <strong>{{ meeting.student_name }}</strong>
+                
+                <span v-if="editingMeetingId !== meeting.id">
+                    {{ formatLongDate(meeting.date) }} at {{ format12Hour(meeting.start_time) }}
+                </span>
+
+                <div v-else class="edit-inputs">
+    <div class="input-group">
+        <label>Date</label>
+        <input v-model="editData.date" type="date" class="resched-input">
+    </div>
+    <div class="input-group">
+        <label>Start</label>
+        <input v-model="editData.start_time" type="time" class="resched-input">
+    </div>
+    <div class="input-group">
+        <label>End</label>
+        <input v-model="editData.end_time" type="time" class="resched-input">
+    </div>
+</div>
             </div>
+            
+            <div class="action-row-horizontal">
+                <template v-if="editingMeetingId !== meeting.id">
+                    <button @click="startEdit(meeting)" class="btn-text">Reschedule</button>
+                    <button @click="handleMeetingAction(meeting.id, 'decline')" class="btn-text danger">Cancel</button>
+                    <span class="status-pill-small">APPROVED</span>
+                </template>
+                <template v-else>
+                    <button @click="saveReschedule(meeting.id)" class="btn-text success">Save Changes</button>
+                    <button @click="editingMeetingId = null" class="btn-text">Back</button>
+                </template>
+            </div>
+        </div>
+        
+        <div class="booking-footer" v-if="meeting.meeting_link && editingMeetingId !== meeting.id">
+            <a :href="meeting.meeting_link" target="_blank" class="join-btn">🎥 Join Jitsi</a>
+            <button @click="addToGoogleCalendar(meeting)" class="google-sync-btn">🗓️ Sync Google</button>
         </div>
     </div>
 </div>
@@ -412,4 +501,107 @@ input, .bio-area { width: 100%; padding: 12px; border: 1px solid #DEE4FE; border
     color: white;
 }
 
+.meeting-item-card {
+    background: white;
+    border: 1px solid #DEE4FE;
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.booking-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.action-row-horizontal {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.btn-text {
+    background: none;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #3e55f8;
+    cursor: pointer;
+    padding: 0;
+}
+
+.btn-text.danger { color: #ef4444; }
+.btn-text.success { color: #2DE1AA; }
+.btn-text:hover { text-decoration: underline; }
+
+.status-pill-small {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #ecfdf5;
+    color: #2DE1AA;
+}
+
+.edit-inputs { display: flex; gap: 8px; margin-top: 5px; }
+.resched-input { padding: 4px; border: 1px solid #dee4fe; border-radius: 6px; font-size: 0.8rem; }
+
+.booking-footer {
+    display: flex;
+    gap: 10px;
+    padding-top: 0.8rem;
+    border-top: 1px dashed #DEE4FE;
+}
+
+.meeting-item-card {
+    background: white;
+    border: 1px solid #DEE4FE;
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.booking-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.action-row-horizontal {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.btn-text {
+    background: none;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #3e55f8;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.btn-text.danger { color: #ef4444; }
+.btn-text.success { color: #2DE1AA; }
+.btn-text:hover { text-decoration: underline; }
+
+.edit-inputs { display: flex; gap: 8px; margin-top: 5px; }
+.resched-input { 
+    padding: 4px; 
+    border: 1px solid #dee4fe; 
+    border-radius: 6px; 
+    font-size: 0.8rem; 
+    font-family: inherit;
+}
 </style>

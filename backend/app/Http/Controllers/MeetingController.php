@@ -51,6 +51,7 @@ public function store(Request $request)
 public function studentIndex()
 {
     return Meeting::where('student_id', Auth::id())
+        ->where('status', '!=', 'declined') 
         ->with('mentorProfile.user')
         ->get()
         ->map(function ($meeting) {
@@ -80,6 +81,8 @@ public function upcoming()
     return Meeting::where('mentor_profile_id', $mentorId)
         ->where('status', 'approved')
         ->with('student') 
+        ->orderBy('date', 'asc')
+        ->orderBy('start_time', 'asc')
         ->get()
         ->map(function ($meeting) {
             return [
@@ -122,5 +125,54 @@ public function handleAction($id, $action)
     }
     
     return response()->json(['message' => 'Invalid action provided'], 400);
+}
+
+
+public function reschedule(Request $request, $id)
+{
+    $request->validate([
+        'date' => 'required|date|after_or_equal:today',
+        'start_time' => 'required',
+        'end_time' => 'required|after:start_time', 
+    ]);
+
+    $meeting = Meeting::findOrFail($id);
+    
+    $isStudent = Auth::id() === $meeting->student_id;
+    $isMentor = Auth::user()->mentorProfile && Auth::user()->mentorProfile->id === $meeting->mentor_profile_id;
+
+    if (!$isStudent && !$isMentor) {
+        return response()->json(['message' => 'Unauthorized'], 403);
+    }
+
+    $mentor = $meeting->mentorProfile->user;
+    $student = $meeting->student; 
+    $formattedDate = \Carbon\Carbon::parse($request->date)->format('d-m-y');
+
+    $roomName = "StudentCircus-" . Str::slug($mentor->name) . "-" . Str::slug($student->name) . "-" . $formattedDate;
+    $newLink = "https://meet.jit.si/" . $roomName;
+
+    $meeting->update([
+        'date' => $request->date,
+        'start_time' => $request->start_time,
+        'end_time' => $request->end_time, 
+        'status' => 'pending', 
+        'meeting_link' => $newLink
+    ]);
+
+    return response()->json(['message' => 'Reschedule successful. Status reset to pending.']);
+}
+
+public function cancel($id)
+{
+    $meeting = Meeting::findOrFail($id);
+    
+    if (Auth::id() !== $meeting->student_id && Auth::user()->mentorProfile->id !== $meeting->mentor_profile_id) {
+        return response()->json(['message' => 'Unauthorized'], 403);
+    }
+
+    $meeting->update(['status' => 'declined']); 
+
+    return response()->json(['message' => 'Meeting cancelled successfully']);
 }
 }
