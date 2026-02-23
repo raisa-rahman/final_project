@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
+import ReviewForm from '../components/ReviewForm.vue';
 
 const router = useRouter();
 const user = JSON.parse(localStorage.getItem('user'));
@@ -215,6 +216,31 @@ const saveReschedule = async (id) => {
     }
 };
 
+const currentTab = ref('upcoming'); 
+
+const categorizedMeetings = computed(() => {
+    const now = new Date();
+    const upcoming = [];
+    const past = [];
+
+    sentRequests.value.forEach(req => {
+        const meetingDateTime = new Date(`${req.date}T${req.start_time}`);
+        
+        if (meetingDateTime > now && req.status !== 'declined') {
+            upcoming.push(req);
+        } else if (meetingDateTime <= now || req.status === 'declined') {
+            past.push(req);
+        }
+    });
+
+    return { upcoming, past };
+});
+
+const activeReviewMeetingId = ref(null);
+const toggleReviewForm = (meetingId) => {
+    activeReviewMeetingId.value = activeReviewMeetingId.value === meetingId ? null : meetingId;
+};
+
 onMounted(() => {
     fetchProfile();
     fetchMentors();
@@ -253,31 +279,45 @@ onMounted(() => {
 
     <div class="booking-tracker-section">
     <div class="section-header">
-        <h2>Your Meeting Requests</h2>
-        <p class="subtitle">Track the status of sessions you've requested from mentors.</p>
-    </div>
-
-    <div v-if="sentRequests.length === 0" class="empty-state-card">
-        <p>You haven't requested any sessions yet. Browse mentors to get started!</p>
-    </div>
-
-    <div v-else class="request-list">
-    <div v-for="request in sentRequests" :key="request.id" class="request-item">
-    <div class="request-main">
-        <div class="mentor-meta">
-            <strong>{{ request.mentor_name }}</strong>
-            <span v-if="editingMeetingId !== request.id" class="date-display">
-                {{ formatLongDate(request.date) }} at {{ format12Hour(request.start_time) }}
-            </span>
-            <div v-else class="edit-inputs">
-                <input v-model="editData.date" type="date" class="resched-input">
-                <input v-model="editData.start_time" type="time" class="resched-input">
-            </div>
+        <h2>Your Meetings</h2>
+        <div class="tab-toggle">
+            <button 
+                @click="currentTab = 'upcoming'" 
+                :class="{ active: currentTab === 'upcoming' }"
+                class="tab-btn"
+            >
+                Upcoming
+            </button>
+            <button 
+                @click="currentTab = 'past'" 
+                :class="{ active: currentTab === 'past' }"
+                class="tab-btn"
+            >
+                Past Sessions
+            </button>
+            
         </div>
     </div>
 
-    <div class="card-footer">
-        <div class="action-row">
+    <div v-if="categorizedMeetings[currentTab].length === 0" class="empty-state-card">
+        <p v-if="currentTab === 'upcoming'">No upcoming sessions. Time to connect with a mentor!</p>
+        <p v-else>No past sessions found.</p>
+    </div>
+
+    <div v-else class="request-list">
+        <div v-for="request in categorizedMeetings[currentTab]" :key="request.id" class="request-item">
+            <div class="request-main">
+                <div class="mentor-meta">
+                    <strong>{{ request.mentor_name }}</strong>
+                    <span v-if="editingMeetingId !== request.id" class="date-display">
+                        {{ formatLongDate(request.date) }} at {{ format12Hour(request.start_time) }}
+                    </span>
+                    </div>
+            </div>
+
+            <div class="card-footer">
+    <div class="action-row">
+        <template v-if="currentTab === 'upcoming'">
             <template v-if="editingMeetingId !== request.id">
                 <button @click="startEdit(request)" class="btn-text">Reschedule</button>
                 <button @click="cancelMeeting(request.id)" class="btn-text danger">Cancel</button>
@@ -286,20 +326,39 @@ onMounted(() => {
                 <button @click="saveReschedule(request.id)" class="btn-text success">Save</button>
                 <button @click="editingMeetingId = null" class="btn-text">Back</button>
             </template>
-        </div>
-        
-        <span class="status-pill-minimal" :class="request.status">
-            {{ request.status.toUpperCase() }}
-        </span>
-    </div>
+        </template>
 
-    <div v-if="request.status === 'approved' && request.meeting_link" class="link-bar">
-        <a :href="request.meeting_link" target="_blank" class="join-pill">🎥 Join Jitsi</a>
-        <button @click="addToGoogleCalendar(request)" class="sync-pill">🗓️ Sync</button>
+        <template v-else>
+            <button 
+                v-if="request.status === 'approved'" 
+                @click="toggleReviewForm(request.id)"
+                class="btn-text success"
+            >
+                {{ activeReviewMeetingId === request.id ? 'Close' : 'Leave Review' }}
+            </button>
+        </template>
+    </div>
+    
+    <span class="status-pill-minimal" :class="request.status">
+        {{ request.status.toUpperCase() }}
+    </span>
+</div>
+
+<div v-if="activeReviewMeetingId === request.id" class="review-section">
+    <ReviewForm 
+        :meeting-id="request.id"
+        :mentor-id="request.mentor_profile_id"
+        @review-submitted="() => { activeReviewMeetingId = null; fetchSentRequests(); }"
+    />
+</div>
+            
+            <div v-if="currentTab === 'upcoming' && request.status === 'approved' && request.meeting_link" class="link-bar">
+                <a :href="request.meeting_link" target="_blank" class="join-pill">🎥 Join Jitsi</a>
+                <button @click="addToGoogleCalendar(request)" class="sync-pill">🗓️ Sync</button>
+            </div>
+        </div>
     </div>
 </div>
-        </div>
-    </div>
 
     <main class="main-content">
       <header class="dashboard-header">
@@ -640,5 +699,37 @@ input { width: 100%; padding: 10px; border: 1px solid #DEE4FE; border-radius: 8p
     text-decoration: none;
     font-weight: 600;
     border: 1px solid #dee4fe;
+}
+
+.tab-toggle {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    border-bottom: 2px solid #DEE4FE;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+}
+
+.tab-btn.active {
+    color: #3e55f8;
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #3e55f8;
 }
 </style>

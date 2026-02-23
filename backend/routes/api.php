@@ -34,6 +34,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/mentor/meetings/{id}/approve', [MeetingController::class, 'approve']);
     Route::post('/meetings/{id}/reschedule', [MeetingController::class, 'reschedule']);
     Route::post('/meetings/{id}/cancel', [MeetingController::class, 'cancel']);
+    Route::post('/reviews', [App\Http\Controllers\ReviewController::class, 'store']);
+    
 });
 
 Route::get('/mentors/directory', [DirectoryController::class, 'index']);
