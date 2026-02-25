@@ -52,4 +52,6 @@ public function show(Request $request)
     }
     return response()->json($profile);
     }
+
+    
 }

@@ -143,6 +143,19 @@ onMounted(fetchData);
             <FileUpload uploadType="photo" :profileId="mentorProfile.id" @upload-success="fetchData" />
         </div>
       </div>
+      <div class="grid-layout">
+  <div class="profile-card">
+    <h2>Reputation & Feedback</h2>
+    <div class="rating-summary" v-if="mentorProfile.rating_avg > 0">
+      <div class="stat-big">
+        <span class="star-large">★</span>
+        <span class="avg-val">{{ Number(mentorProfile.rating_avg).toFixed(1) }}</span>
+      </div>
+      <p class="review-meta">Based on {{ mentorProfile.reviews_count }} reviews</p>
+    </div>
+    <div v-else class="empty-state">No ratings yet. Your average will appear here after sessions.</div>
+  </div>
+</div>
 
       <div class="verification-card">
         <h2>Identity Verification</h2>
@@ -604,4 +617,18 @@ input, .bio-area { width: 100%; padding: 12px; border: 1px solid #DEE4FE; border
     font-size: 0.8rem; 
     font-family: inherit;
 }
+
+.rating-summary { text-align: center; padding: 1rem; }
+.stat-big { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.star-large { font-size: 2.5rem; color: #F4BD3F; }
+.avg-val { font-size: 3rem; font-weight: 800; color: #1a1f3c; }
+.review-meta { color: #6b7280; font-weight: 600; margin-top: 0.5rem; }
+
+.reviews-container { margin-top: 2rem; background: white; padding: 2rem; border-radius: 12px; border: 1px solid #DEE4FE; }
+.reviews-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1rem; }
+.review-bubble { background: #f8faff; padding: 1.5rem; border-radius: 10px; border: 1px solid #eef2ff; }
+.review-top { display: flex; justify-content: space-between; margin-bottom: 0.8rem; }
+.bubble-stars { font-weight: 800; color: #F4BD3F; }
+.bubble-date { font-size: 0.8rem; color: #9ca3af; }
+.bubble-text { font-style: italic; color: #374151; line-height: 1.5; }
 </style>

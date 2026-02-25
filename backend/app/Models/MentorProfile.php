@@ -14,6 +14,7 @@ class MentorProfile extends Model
         'is_verified',
         'target_country',
         'current_university_year',
+        'rating_avg', 
         'profile_photo_path', 
         'document_path'      
     ];
@@ -34,4 +35,14 @@ class MentorProfile extends Model
 {
     return $this->hasMany(Meeting::class);
 }
+
+    public function reviews() {
+    return $this->hasMany(Review::class);
+}
+
+public function university()
+{
+    return $this->belongsTo(University::class);
+}
+
 }

@@ -15,11 +15,18 @@ class DirectoryController extends Controller{
             $query->where('target_country', $request->country);
         }
         return response()->json($query->get());
-    }
 
+    return MentorProfile::with('user')
+        ->where('is_verified', 1)
+        ->withCount('reviews') 
+        ->get(); 
+
+    }
     public function showPublic($id)
 {
-    $mentor = MentorProfile::with(['user'])
+    $mentor = MentorProfile::with(['user', 'university', 'reviews'])
+        ->withAvg('reviews', 'rating') 
+        ->withCount('reviews') 
         ->where('is_verified', 1)
         ->findOrFail($id);
 

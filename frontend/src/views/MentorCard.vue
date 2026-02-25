@@ -31,11 +31,20 @@ const handleFavorite = async () => {
     </div>
 
     <div class="mentor-info">
-      <h3>{{ mentor.user?.name }}</h3>
-      <p class="expertise">{{ mentor.subject_expertise }}</p>
-      <p class="bio-snippet">{{ mentor.bio || 'Alumni mentor ready to help.' }}</p>
-      <button @click="router.push(`/mentor/profile/${mentor.id}`)" class="connect-btn">View Profile</button>
-    </div>
+    <h3>{{ mentor.user?.name }}</h3>
+    
+    <div class="rating-display" v-if="mentor.rating_avg && Number(mentor.rating_avg) > 0">
+    <span class="stars">★</span> 
+    <strong>{{ Number(mentor.rating_avg).toFixed(1) }}</strong> 
+    <span class="review-count">({{ mentor.reviews_count || 0 }} reviews)</span>
+</div>
+<div v-else class="no-rating">No reviews yet</div>
+
+    <p class="expertise">{{ mentor.subject_expertise }}</p>
+    <button @click="router.push(`/mentor/profile/${mentor.id}`)" class="connect-btn">
+        View Profile
+    </button>
+</div>
   </div>
 </template>
 

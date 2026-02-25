@@ -380,22 +380,31 @@ onMounted(() => {
         <div v-if="mentorsLoading" class="loading-state">Finding mentors...</div>
 
         <div v-else class="mentor-grid">
-          <div v-for="mentor in filteredMentors" :key="mentor.id" class="mentor-card">
-            <button @click.stop="toggleFavorite(mentor.id)" class="fav-btn">
-               <span :class="{ 'heart-active': isMentorFavorited(mentor.id) }">♥</span>
-            </button>
-            
-            <div class="mentor-avatar">
-               <img :src="mentor.profile_photo_path ? `http://localhost:8000/storage/${mentor.profile_photo_path}` : 'https://via.placeholder.com/80'">
-               <span class="verify-tag">Verified ✅</span>
-            </div>
-            <div class="mentor-info">
-               <h3>{{ mentor.user?.name }}</h3>
-               <p class="expertise">{{ mentor.subject_expertise }}</p>
-               <button @click="router.push(`/mentor/profile/${mentor.id}`)" class="connect-btn">View Profile</button>
-            </div>
-          </div>
+    <div v-for="mentor in filteredMentors" :key="mentor.id" class="mentor-card">
+        <button @click.stop="toggleFavorite(mentor.id)" class="fav-btn">
+            <span :class="{ 'heart-active': isMentorFavorited(mentor.id) }">♥</span>
+        </button>
+        
+        <div class="mentor-avatar">
+            <img :src="mentor.profile_photo_path ? `http://localhost:8000/storage/${mentor.profile_photo_path}` : 'https://via.placeholder.com/100'">
+            <span class="verify-tag">Verified ✅</span>
         </div>
+
+        <div class="mentor-info">
+            <h3>{{ mentor.user?.name }}</h3>
+            
+            <div class="rating-bar" v-if="mentor.rating_avg > 0">
+                <span class="star-icon">★</span>
+                <span class="rating-num">{{ Number(mentor.rating_avg).toFixed(1) }}</span>
+                <span class="review-qty">({{ mentor.reviews_count || 0 }} reviews)</span>
+            </div>
+            <div v-else class="no-rating-pill">No reviews yet...</div>
+
+            <p class="expertise">{{ mentor.subject_expertise }}</p>
+            <button @click="router.push(`/mentor/profile/${mentor.id}`)" class="connect-btn">View Profile</button>
+        </div>
+    </div>
+</div>
       </div>
     </main>
   </div>
@@ -731,5 +740,64 @@ input { width: 100%; padding: 10px; border: 1px solid #DEE4FE; border-radius: 8p
     width: 100%;
     height: 2px;
     background: #3e55f8;
+}
+
+.rating-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-bottom: 8px;
+}
+
+.star-icon { color: #F4BD3F; font-size: 1.1rem; }
+.rating-num { font-weight: 700; color: #1a1f3c; }
+.review-qty { color: #6b7280; font-size: 0.8rem; }
+.new-badge { 
+    font-size: 0.7rem; 
+    color: #3e55f8; 
+    background: #f0f3ff; 
+    padding: 2px 8px; 
+    border-radius: 10px; 
+    display: inline-block;
+    margin-bottom: 8px;
+}
+
+.no-rating-pill {
+    font-size: 0.75rem;
+    font-style: italic;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+}
+
+.rating-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.star-icon { color: #F4BD3F; } 
+.rating-num { font-weight: 700; color: #1a1f3c; }
+
+.mentor-avatar img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #3e55f8;
+    margin-bottom: 1rem;
+}
+
+.no-rating-pill {
+    font-size: 0.75rem;
+    font-style: italic;
+    color: #9ca3af;
+    background: #f3f4f6;
+    padding: 2px 10px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 0.5rem;
 }
 </style>

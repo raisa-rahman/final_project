@@ -23,11 +23,11 @@ const fetchMentorDetails = async () => {
     try {
         const response = await axios.get(`http://localhost:8000/api/mentors/profile/${mentorId}`);
         mentor.value = response.data;
-        loading.value = false; 
     } catch (err) {
-        console.error("API Error:", err.response?.data || err.message);
-        router.push('/student/dashboard'); 
-        loading.value = false; 
+        console.error("API Error Details:", err.response?.data);
+        router.push('/dashboard'); 
+    } finally {
+        loading.value = false;
     }
 };
 
@@ -61,11 +61,34 @@ onMounted(fetchMentorDetails);
         </div>
         
         <div class="info-section">
-          <h1>{{ mentor.user?.name }}</h1>
-          <p class="expertise-tag">{{ mentor.subject_expertise }}</p>
-          <p class="uni-name">{{ mentor.university?.name || mentor.target_university }}</p>
+    <h1>{{ mentor.user?.name }}</h1>
+    
+    <div class="profile-rating-badge" v-if="mentor.rating_avg && Number(mentor.rating_avg) > 0">
+        <span class="stars">★ ★ ★ ★ ★</span>
+        <span class="rating-text">
+            {{ Number(mentor.rating_avg).toFixed(1) }} 
+            ({{ mentor.reviews_count || 0 }} reviews)
+        </span>
+    </div>
+    <div v-else class="no-rating-badge">no reviews yet</div>
+
+    <p class="expertise-tag">{{ mentor.subject_expertise }}</p>
+    <p class="uni-name">{{ mentor.university?.name || mentor.target_university }}</p>
+</div>
+
+<section class="reviews-section" v-if="mentor.reviews && mentor.reviews.length > 0">
+    <h3 class="section-title">Community Feedback</h3>
+    <div v-for="review in mentor.reviews" :key="review.id" class="review-item">
+        <div class="review-header">
+            <span class="stars">★ {{ review.rating }}</span>
+            <span class="review-date">{{ new Date(review.created_at).toLocaleDateString() }}</span>
         </div>
+        <p class="review-comment">{{ review.comment || 'No comment provided.' }}</p>
+    </div>
+</section>
       </div>
+
+      
 
       <div class="profile-content">
         <section class="bio-card">
@@ -121,7 +144,7 @@ onMounted(fetchMentorDetails);
 </template>
 
 <style scoped>
-.profile-page { padding: 3rem 5%; max-width: 1000px; margin: 0 auto; }
+.profile-page { padding: 3rem 5%; margin: 0 auto; }
 .profile-header { display: flex; gap: 3rem; align-items: center; margin: 2rem 0; background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
 .profile-img { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid #3e55f8; }
 .expertise-tag { color: #3e55f8; font-weight: 700; font-size: 1.2rem; margin: 0.5rem 0; }
@@ -148,4 +171,68 @@ textarea { height: 100px; resize: none; }
 
 .submit-btn { width: 100%; background: #3e55f8; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 700; cursor: pointer; }
 .cancel-btn { width: 100%; background: none; color: #6b7280; border: none; margin-top: 0.5rem; cursor: pointer; }
+
+.profile-rating-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0.5rem 0;
+    padding: 4px 12px;
+    background: #f0fdf4; 
+    border-radius: 20px;
+    width: fit-content;
+}
+
+.stars {
+    color: #F4BD3F;
+    letter-spacing: 2px;
+    font-size: 0.9rem;
+}
+
+.rating-text {
+    font-weight: 700;
+    color: #15803d;
+    font-size: 0.9rem;
+}
+
+.no-rating-badge {
+    font-size: 0.85rem;
+    color: #6b7280;
+    font-style: italic;
+    margin: 0.5rem 0;
+}
+
+.reviews-section {
+    grid-column: 1 / -1;
+    margin-top: 2rem;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.section-title {
+    margin-bottom: 1.5rem;
+    color: #1a1f3c;
+    border-bottom: 2px solid #f0f3ff;
+    padding-bottom: 0.5rem;
+}
+
+.review-item {
+    padding: 1.5rem;
+    border-bottom: 1px solid #f0f3ff;
+}
+
+.review-item:last-child { border-bottom: none; }
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.review-comment {
+    color: #4b5563;
+    line-height: 1.6;
+}
 </style>
