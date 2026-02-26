@@ -28,22 +28,22 @@ public function update(Request $request)
     return response()->json(['message' => 'Profile updated successfully!', 'profile' => $profile]);
 }
 
-public function toggleFavorite(Request $request, $mentorId)
+    public function toggleFavorite($id)
 {
-    $user = $request->user();
-    $favorite = $user->favorites()->where('mentor_profile_id', $mentorId)->first();
+    $user = auth()->user();
+    $mentor = \App\Models\MentorProfile::findOrFail($id);
+    $status = $user->favorites()->toggle($mentor->id);
 
-    if ($favorite) {
-        $favorite->delete();
-        return response()->json(['status' => 'removed']);
-    }
-
-    $user->favorites()->create(['mentor_profile_id' => $mentorId]);
-    return response()->json(['status' => 'added']);
+    return response()->json([
+        'status' => count($status['attached']) > 0 ? 'added' : 'removed',
+        'message' => 'Favorite updated successfully'
+    ]);
 }
-public function getFavorites(Request $request)
+
+public function getFavorites()
 {
-    return response()->json($request->user()->favorites);
+    $user = auth()->user();
+    return response()->json($user->favorites()->get(['mentor_profile_id']));
 }
 }
 

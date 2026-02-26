@@ -88,8 +88,6 @@ onMounted(fetchMentorDetails);
 </section>
       </div>
 
-      
-
       <div class="profile-content">
         <section class="bio-card">
           <h3>About Me</h3>

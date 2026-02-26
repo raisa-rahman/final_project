@@ -111,8 +111,9 @@ const handleLogout = async () => {
 
 const fetchFavorites = async () => {
     try {
-        const response = await axios.get('http://localhost:8000/api/student/favorites');
-        favoriteIds.value = response.data.map(fav => fav.mentor_profile_id);
+        const response = await axios.get('http://localhost:8000/api/student/profile');
+        const data = response.data.favorites_json;
+        favoriteIds.value = data ? JSON.parse(data) : [];
     } catch (err) {
         console.error("Failed to load favorites", err);
     }
@@ -265,16 +266,6 @@ onMounted(() => {
         </div>
         <button @click="updateProfile" :disabled="loading" class="save-btn small">Update</button>
       </div>
-
-      <div class="saved-mentors-section">
-        <h3>Saved Mentors ({{ savedMentors.length }})</h3>
-        <div v-if="savedMentors.length === 0" class="empty-mini">No bookmarks yet.</div>
-        <ul class="saved-list">
-          <li v-for="mentor in savedMentors" :key="mentor.id" @click="router.push(`/mentor/profile/${mentor.id}`)">
-            {{ mentor.user?.name }} - <span class="mini-expertise">{{ mentor.subject_expertise }}</span>
-          </li>
-        </ul>
-      </div>
     </aside>
 
     <div class="booking-tracker-section">
@@ -381,9 +372,6 @@ onMounted(() => {
 
         <div v-else class="mentor-grid">
     <div v-for="mentor in filteredMentors" :key="mentor.id" class="mentor-card">
-        <button @click.stop="toggleFavorite(mentor.id)" class="fav-btn">
-            <span :class="{ 'heart-active': isMentorFavorited(mentor.id) }">♥</span>
-        </button>
         
         <div class="mentor-avatar">
             <img :src="mentor.profile_photo_path ? `http://localhost:8000/storage/${mentor.profile_photo_path}` : 'https://via.placeholder.com/100'">

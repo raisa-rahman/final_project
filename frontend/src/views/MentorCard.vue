@@ -2,13 +2,13 @@
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const props = defineProps(['mentor', 'isFavorited']);
 const emit = defineEmits(['toggle-fav']);
-const router = useRouter();
 
 const handleFavorite = async () => {
     try {
-        await axios.post(`http://localhost:8000/api/mentors/${props.mentor.id}/favorite`);
+        const res = await axios.post(`http://localhost:8000/api/mentors/${props.mentor.id}/favorite`);
         emit('toggle-fav', props.mentor.id); 
     } catch (err) {
         console.error("Favorite toggle failed", err);
@@ -18,9 +18,9 @@ const handleFavorite = async () => {
 
 <template>
   <div class="mentor-card">
-    <button @click.stop="handleFavorite" class="fav-btn" :title="isFavorited ? 'Remove Bookmark' : 'Save Mentor'">
-      <span :class="{ 'heart-active': isFavorited }">♥</span>
-    </button>
+    <button @click.stop="handleFavorite" class="fav-btn">
+  <span :class="{ 'heart-active': isFavorited }">♥</span>
+  </button>
 
     <div class="mentor-avatar">
       <img 

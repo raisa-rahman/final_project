@@ -45,4 +45,9 @@ public function university()
     return $this->belongsTo(University::class);
 }
 
+
+    public function favoritedBy(){
+        return $this->belongsToMany(User::class, 'favorites', 'mentor_profile_id', 'user_id');
+    }
+
 }
