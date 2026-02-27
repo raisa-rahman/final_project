@@ -61,12 +61,86 @@ onMounted(fetchMentors);
 </template>
 
 <style scoped>
-.directory-container { display: grid; grid-template-columns: 250px 1fr; gap: 2rem; padding: 2rem; }
-.filters { background: #f8faff; padding: 1.5rem; border-radius: 12px; height: fit-content; }
-.filter-input { width: 100%; padding: 10px; margin-bottom: 1rem; border: 1px solid #dee4fe; border-radius: 8px; }
+.directory-container { 
+    display: grid; 
+    grid-template-columns: 250px 1fr; 
+    gap: 2rem; 
+    padding: 2rem; 
+    font-family: 'SF-UI Text', 'Arial', sans-serif;
+    background-color: #fbfcff;
+}
+
+.filters { 
+    background: #ffffff; 
+    padding: 1.5rem; 
+    border-radius: 12px; 
+    height: fit-content; 
+    border: 1px solid #DEE4FE;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+}
+
+h2, h3 {
+    font-family: 'Red Hat Display', sans-serif;
+    font-weight: 700;
+    color: #1a1f3c; 
+}
+
+.filter-input { 
+    width: 100%; 
+    padding: 10px; 
+    margin-bottom: 1rem; 
+    border: 1px solid #DEE4FE; 
+    border-radius: 8px; 
+    font-family: 'SF-UI Text', sans-serif;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #3e55f8;
+}
+
 .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-.mentor-card { background: white; border: 1px solid #eee; border-radius: 12px; padding: 1.5rem; transition: transform 0.2s; }
-.mentor-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-.expertise { color: #3e55f8; font-weight: 700; margin: 0.5rem 0; }
-.book-btn { width: 100%; background: #3e55f8; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; }
+
+.mentor-card { 
+    background: white; 
+    border: 1px solid #DEE4FE; 
+    border-radius: 12px; 
+    padding: 1.5rem; 
+    transition: transform 0.2s, box-shadow 0.2s; 
+}
+
+.mentor-card:hover { 
+    transform: translateY(-5px); 
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05); 
+}
+
+.expertise { 
+    color: #3e55f8; 
+    font-weight: 700; 
+    margin: 0.5rem 0; 
+    font-family: 'SF-UI Text', sans-serif;
+}
+
+.rating-stars {
+    color: #F4BD3F;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.book-btn { 
+    width: 100%; 
+    background: #3e55f8; 
+    color: white; 
+    border: none; 
+    padding: 12px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-family: 'Red Hat Display', sans-serif;
+    font-weight: 700;
+    transition: opacity 0.2s;
+}
+
+.book-btn:hover {
+    opacity: 0.9;
+}
 </style>

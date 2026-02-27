@@ -75,17 +75,6 @@ onMounted(fetchMentorDetails);
     <p class="expertise-tag">{{ mentor.subject_expertise }}</p>
     <p class="uni-name">{{ mentor.university?.name || mentor.target_university }}</p>
 </div>
-
-<section class="reviews-section" v-if="mentor.reviews && mentor.reviews.length > 0">
-    <h3 class="section-title">Community Feedback</h3>
-    <div v-for="review in mentor.reviews" :key="review.id" class="review-item">
-        <div class="review-header">
-            <span class="stars">★ {{ review.rating }}</span>
-            <span class="review-date">{{ new Date(review.created_at).toLocaleDateString() }}</span>
-        </div>
-        <p class="review-comment">{{ review.comment || 'No comment provided.' }}</p>
-    </div>
-</section>
       </div>
 
       <div class="profile-content">
@@ -138,99 +127,158 @@ onMounted(fetchMentorDetails);
         </div>
       </div>
     </div>
+    <section class="reviews-section" v-if="mentor.reviews && mentor.reviews.length > 0">
+    <h3 class="section-title">Student Feedback</h3>
+    <div v-for="review in mentor.reviews" :key="review.id" class="review-item">
+        <div class="review-header">
+            <span class="stars">★ {{ review.rating }}</span>
+            <span class="review-date">{{ new Date(review.created_at).toLocaleDateString() }}</span>
+        </div>
+        <p class="review-comment">{{ review.comment || 'No comment provided.' }}</p>
+    </div>
+</section>
   </div>
 </template>
 
 <style scoped>
-.profile-page { padding: 3rem 5%; margin: 0 auto; }
-.profile-header { display: flex; gap: 3rem; align-items: center; margin: 2rem 0; background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-.profile-img { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid #3e55f8; }
-.expertise-tag { color: #3e55f8; font-weight: 700; font-size: 1.2rem; margin: 0.5rem 0; }
+.profile-page { 
+    padding: 3rem 5%; 
+    margin: 0 auto; 
+    font-family: 'SF-UI Text', sans-serif; 
+    background-color: #fbfcff;
+}
+
+.profile-header { 
+    display: flex; 
+    gap: 3rem; 
+    align-items: center; 
+    margin: 2rem 0; 
+    background: white; 
+    padding: 2rem; 
+    border-radius: 15px; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
+    border: 1px solid #DEE4FE;
+}
+
+h1, h2, .section-title {
+    font-family: 'Red Hat Display', sans-serif; 
+    font-weight: 700;
+    color: #1a1f3c;
+}
+
+.profile-img { 
+    width: 150px; 
+    height: 150px; 
+    border-radius: 50%; 
+    object-fit: cover; 
+    border: 4px solid #3e55f8; 
+}
+
+.expertise-tag { 
+    color: #3e55f8; 
+    font-family: 'Red Hat Display', sans-serif;
+    font-weight: 700; 
+    font-size: 1.2rem; 
+    margin: 0.5rem 0; 
+}
+
 .profile-content { display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; }
-.bio-card, .expertise-card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-.book-now-btn { width: 100%; background: #3e55f8; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 1rem; }
-.back-link { background: none; border: none; color: #6b7280; cursor: pointer; font-weight: 600; }
+
+.bio-card, .expertise-card, .reviews-section { 
+    background: white; 
+    padding: 2rem; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+    border: 1px solid #DEE4FE;
+}
+
+.book-now-btn, .submit-btn { 
+    width: 100%; 
+    background: #3e55f8; 
+    color: white; 
+    border: none; 
+    padding: 15px; 
+    border-radius: 8px; 
+    font-family: 'Red Hat Display', sans-serif;
+    font-weight: 700; 
+    cursor: pointer; 
+    margin-top: 1rem; 
+    transition: opacity 0.2s;
+}
+
+.book-now-btn:hover, .submit-btn:hover {
+    opacity: 0.9;
+}
+
+.back-link { 
+    background: none; 
+    border: none; 
+    color: #6b7280; 
+    cursor: pointer; 
+    font-weight: 600; 
+    font-family: 'SF-UI Text', sans-serif;
+}
+
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(26, 31, 60, 0.8); display: flex;
+    background: rgba(26, 31, 60, 0.8); 
+    display: flex;
     justify-content: center; align-items: center; z-index: 1000;
 }
 
 .booking-modal {
     background: white; padding: 2.5rem; border-radius: 15px;
     width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    font-family: 'SF-UI Text', sans-serif;
 }
 
-.time-row { display: flex; gap: 1rem; margin: 1rem 0; }
-.form-group { margin-bottom: 1.2rem; flex: 1; }
-label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: #1a1f3c; }
-input, textarea { width: 100%; padding: 12px; border: 1px solid #DEE4FE; border-radius: 8px; }
-textarea { height: 100px; resize: none; }
+label { 
+    display: block; 
+    font-weight: 600; 
+    margin-bottom: 0.5rem; 
+    color: #1a1f3c; 
+}
 
-.submit-btn { width: 100%; background: #3e55f8; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 700; cursor: pointer; }
-.cancel-btn { width: 100%; background: none; color: #6b7280; border: none; margin-top: 0.5rem; cursor: pointer; }
+input, textarea { 
+    width: 100%; 
+    padding: 12px; 
+    border: 1px solid #DEE4FE; 
+    border-radius: 8px; 
+    font-family: 'SF-UI Text', sans-serif;
+}
 
 .profile-rating-badge {
     display: flex;
     align-items: center;
     gap: 10px;
     margin: 0.5rem 0;
-    padding: 4px 12px;
-    background: #f0fdf4; 
+    padding: 6px 14px;
+    background: #e6fffa; 
     border-radius: 20px;
     width: fit-content;
 }
 
 .stars {
-    color: #F4BD3F;
+    color: #F4BD3F; 
     letter-spacing: 2px;
     font-size: 0.9rem;
 }
 
 .rating-text {
     font-weight: 700;
-    color: #15803d;
+    color: #065f46; 
     font-size: 0.9rem;
-}
-
-.no-rating-badge {
-    font-size: 0.85rem;
-    color: #6b7280;
-    font-style: italic;
-    margin: 0.5rem 0;
-}
-
-.reviews-section {
-    grid-column: 1 / -1;
-    margin-top: 2rem;
-    padding: 2rem;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
 .section-title {
     margin-bottom: 1.5rem;
-    color: #1a1f3c;
-    border-bottom: 2px solid #f0f3ff;
     padding-bottom: 0.5rem;
-}
-
-.review-item {
-    padding: 1.5rem;
-    border-bottom: 1px solid #f0f3ff;
-}
-
-.review-item:last-child { border-bottom: none; }
-
-.review-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
+    border-bottom: 2px solid #DEE4FE;
 }
 
 .review-comment {
     color: #4b5563;
     line-height: 1.6;
+    font-family: 'SF-UI Text', sans-serif;
 }
 </style>

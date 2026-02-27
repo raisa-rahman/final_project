@@ -260,7 +260,7 @@ onMounted(fetchData);
 
 <style scoped>
 .google-sync-btn {
-    background: white;
+    background: rgb(163, 158, 158);
     border: 1px solid #DEE4FE;
     padding: 8px 12px;
     border-radius: 6px;
@@ -268,7 +268,7 @@ onMounted(fetchData);
     font-size: 0.8rem;
     transition: background 0.2s;
 }
-.google-sync-btn:hover { background: #f8faff; border-color: #3e55f8; }
+.google-sync-btn:hover { background: #0047fc; border-color: #3e55f8; }
 
 .approve-btn { background: #2DE1AA; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
 .decline-btn { background: #fee2e2; color: #ef4444; border: 1px solid #ef4444; padding: 8px 16px; border-radius: 6px; cursor: pointer; }

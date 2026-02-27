@@ -49,11 +49,79 @@ const handleFavorite = async () => {
 </template>
 
 <style scoped>
-.mentor-card { position: relative; background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #DEE4FE; text-align: center; }
-.fav-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #d1d5db; transition: color 0.2s; }
+.mentor-card { 
+    position: relative; 
+    background: white; 
+    border-radius: 12px; 
+    padding: 1.5rem; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+    border: 1px solid #DEE4FE; 
+    text-align: center; 
+    font-family: 'SF-UI Text', sans-serif;
+}
+
+.fav-btn { 
+    position: absolute; 
+    top: 10px; 
+    right: 10px; 
+    background: none; 
+    border: none; 
+    font-size: 1.5rem; 
+    cursor: pointer; 
+    color: #d1d5db; 
+    transition: color 0.2s; 
+}
+
 .heart-active { color: #ef4444; }
-.mentor-avatar img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #3e55f8; }
-.verify-tag { background: #2DE1AA; color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
-.expertise { color: #3e55f8; font-weight: 700; }
-.connect-btn { background: #3e55f8; color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; cursor: pointer; margin-top: 10px; }
+
+.mentor-avatar img { 
+    width: 80px; 
+    height: 80px; 
+    border-radius: 50%; 
+    object-fit: cover; 
+    border: 3px solid #3e55f8; 
+}
+
+.verify-tag { 
+    background: #2DE1AA; 
+    color: white; 
+    font-size: 0.7rem; 
+    padding: 2px 8px; 
+    border-radius: 20px; 
+    font-family: 'Red Hat Display', sans-serif;
+    font-weight: 800; 
+    text-transform: uppercase;
+}
+
+h3 {
+    font-family: 'Red Hat Display', sans-serif;
+    font-weight: 700;
+    color: #1a1f3c; 
+    margin: 0.5rem 0;
+}
+
+.expertise { 
+    color: #3e55f8; 
+    font-weight: 700; 
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.connect-btn { 
+    background: #3e55f8; 
+    color: white; 
+    border: none; 
+    padding: 10px; 
+    border-radius: 8px; 
+    width: 100%; 
+    cursor: pointer; 
+    margin-top: 10px; 
+    font-family: 'Red Hat Display', sans-serif;
+    font-weight: 700;
+    transition: opacity 0.2s;
+}
+
+.connect-btn:hover {
+    opacity: 0.9;
+}
 </style>

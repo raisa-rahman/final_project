@@ -40,8 +40,70 @@ const handleAdminLogin = async () => {
 </template>
 
 <style scoped>
-.login-container { max-width: 400px; margin: 100px auto; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
-h1 { color: #3e55f8; font-family: 'Red Hat Display', sans-serif; }
-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #DEE4FE; border-radius: 8px; }
-button { width: 100%; padding: 12px; background: #3e55f8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+.login-container { 
+    max-width: 400px; 
+    margin: 100px auto; 
+    padding: 2rem; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); 
+    text-align: center; 
+    background: white;
+    font-family: 'SF-UI Text', 'Arial', sans-serif;
+    border: 1px solid #DEE4FE;
+}
+
+h1 { 
+    color: #1a1f3c; 
+    font-family: 'Red Hat Display', sans-serif; 
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+label {
+    display: block;
+    text-align: left;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1a1f3c;
+    margin-bottom: 0.3rem;
+}
+
+input { 
+    width: 100%; 
+    padding: 12px; 
+    margin-bottom: 1.2rem; 
+    border: 1px solid #DEE4FE; 
+    border-radius: 8px; 
+    font-family: 'SF-UI Text', sans-serif;
+    transition: border-color 0.2s;
+}
+
+input:focus {
+    outline: none;
+    border-color: #3e55f8;
+}
+
+button { 
+    width: 100%; 
+    padding: 12px; 
+    background: #3e55f8; 
+    color: white; 
+    border: none; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-family: 'Red Hat Display', sans-serif;
+    font-weight: 700; 
+    font-size: 1rem;
+    transition: opacity 0.2s;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.error-message {
+    color: #ef4444;
+    font-size: 0.85rem;
+    margin-top: 1rem;
+}
 </style>

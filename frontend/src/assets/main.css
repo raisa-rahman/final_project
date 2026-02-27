@@ -1,31 +1,68 @@
 @import './base.css';
 
+:root {
+  --sc-blue: #3e55f8;       
+  --sc-yellow: #F4BD3F;     
+  --sc-green: #2DE1AA;      
+  --sc-light-purple: #DEE4FE;
+  --sc-navy: #1a1f3c;        
+
+  --font-heading: 'Red Hat Display', sans-serif;
+  --font-body: 'SF-UI Text', 'Arial', sans-serif;
+}
+
 #app {
   width: 100%;
   min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--sc-navy);
   font-weight: normal;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, .heading-font {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--sc-navy);
 }
 
 a,
 .green {
   text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
+  color: var(--sc-green);
+  transition: 0.3s ease;
   padding: 3px;
+  font-weight: 600;
 }
 
 @media (hover: hover) {
   a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
+    background-color: rgba(62, 85, 248, 0.1);
+    color: var(--sc-blue);
   }
+}
+
+button, .btn-primary {
+  font-family: var(--font-heading);
+  background-color: var(--sc-blue);
+  color: #ffffff;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+button:hover {
+  opacity: 0.9;
 }
 
 @media (min-width: 1024px) {
   body {
     display: block; 
+    background-color: #fbfcff; 
   }
 
-#app {
+  #app {
     display: block; 
     padding: 0;
   }

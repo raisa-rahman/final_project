@@ -42,7 +42,6 @@ const handleLogin = async () => {
 </template>
 
 <style scoped>
-/* Use the Blue and Red Hat Display font theme from Day 4 */
 .login-container {
   max-width: 400px;
   margin: 4rem auto;
@@ -51,29 +50,52 @@ const handleLogin = async () => {
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   font-family: 'SF-UI Text', sans-serif;
+  border: 1px solid #DEE4FE; 
 }
+
 h1 {
   font-family: 'Red Hat Display', sans-serif;
-  color: #3e55f8; /* Blue Theme */
+  font-weight: 700;
+  color: #1a1f3c; 
 }
+
+label {
+  display: block;
+  text-align: left;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  color: #1a1f3c;
+}
+
 input {
   width: 100%;
   padding: 12px;
   margin: 8px 0 16px;
-  border: 1px solid #DEE4FE; /* Light Purple Theme */
+  border: 1px solid #DEE4FE; 
   border-radius: 8px;
+  font-family: 'SF-UI Text', sans-serif;
+  transition: border-color 0.2s;
 }
+
+input:focus {
+  outline: none;
+  border-color: #3e55f8; 
+}
+
 button {
   width: 100%;
-  background-color: #3e55f8; /* Blue */
+  background-color: #3e55f8; 
   color: white;
   padding: 14px;
   border: none;
   border-radius: 8px;
-  font-weight: 600;
+  font-family: 'Red Hat Display', sans-serif;
+  font-weight: 700;
   cursor: pointer;
+  transition: background-color 0.3s ease;
 }
+
 button:hover {
-  background-color: #2DE1AA; /* Green Theme hover */
+  background-color: #2DE1AA; 
 }
 </style>

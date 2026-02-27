@@ -97,15 +97,14 @@ const toggleMode = (newMode) => {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@700&display=swap');
-
 .auth-wrapper {
-  background-color: #f8faff;
+  background-color: #fbfcff; 
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   padding-top: 5rem;
+  font-family: 'SF-UI Text', 'Arial', sans-serif;
 }
 
 .onboarding-container {
@@ -114,6 +113,7 @@ const toggleMode = (newMode) => {
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+  border: 1px solid #DEE4FE;
   overflow: hidden;
 }
 
@@ -134,13 +134,15 @@ const toggleMode = (newMode) => {
   padding: 1rem;
   background: none;
   border: none;
+  font-family: 'SF-UI Text', sans-serif;
   font-weight: 700;
   color: #9ca3af;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .tabs button.active {
-  color: #3e55f8;
+  color: #3e55f8; 
   border-bottom: 3px solid #3e55f8;
 }
 
@@ -148,22 +150,25 @@ const toggleMode = (newMode) => {
 
 h1 {
   font-family: 'Red Hat Display', sans-serif;
-  color: #1a1f3c;
+  color: #1a1f3c; 
   margin-bottom: 0.5rem;
   font-size: 1.5rem;
+  font-weight: 700;
 }
 
 p {
+  font-family: 'SF-UI Text', sans-serif;
   color: #6b7280;
   margin-bottom: 1.5rem;
   font-size: 0.9rem;
+  line-height: 1.5;
 }
 
 label {
   display: block;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.85rem;
-  color: #374151;
+  color: #1a1f3c;
   margin-bottom: 1rem;
 }
 
@@ -173,7 +178,9 @@ input {
   margin-top: 6px;
   border: 1px solid #DEE4FE; 
   border-radius: 8px;
+  font-family: 'SF-UI Text', sans-serif;
   font-size: 0.95rem;
+  transition: border-color 0.2s;
 }
 
 input:focus {
@@ -188,10 +195,11 @@ input:focus {
   padding: 14px;
   border: none;
   border-radius: 8px;
+  font-family: 'Red Hat Display', sans-serif;
   font-weight: 700;
   cursor: pointer;
   margin-top: 1rem;
-  transition: background-color 0.2s;
+  transition: background-color 0.3s ease;
 }
 
 .submit-btn:hover {
@@ -202,7 +210,12 @@ input:focus {
   text-align: center;
   margin-top: 1.5rem;
   font-size: 0.8rem;
+  font-family: 'SF-UI Text', sans-serif;
 }
 
-.institution-link a { color: #3e55f8; text-decoration: none; font-weight: 600; }
+.institution-link a { 
+  color: #3e55f8; 
+  text-decoration: none; 
+  font-weight: 600; 
+}
 </style>

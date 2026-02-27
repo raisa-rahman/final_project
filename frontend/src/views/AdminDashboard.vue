@@ -100,55 +100,127 @@ onMounted(fetchAllMentors);
 </template>
 
 <style scoped>
-.admin-dashboard { padding: 40px; max-width: 1000px; margin: 0 auto; font-family: 'SF Pro Text', sans-serif; }
+:root {
+  --sc-blue: #3e55f8;       
+  --sc-yellow: #F4BD3F;     
+  --sc-green: #2DE1AA;       
+  --sc-light-purple: #DEE4FE;
+  --sc-navy: #1a1f3c;        
+  
+  --font-heading: 'Red Hat Display', sans-serif;
+  --font-body: 'SF-UI Text', 'Arial', sans-serif;
+}
+
+.admin-dashboard { 
+  padding: 40px; 
+  max-width: 1000px; 
+  margin: 0 auto; 
+  font-family: var(--font-body); /* Standardized typography [cite: 3630] */
+  background-color: #fbfcff;
+  min-height: 100vh;
+}
+
+.admin-header { 
+  margin-bottom: 30px; 
+  border-bottom: 2px solid var(--sc-light-purple); 
+  padding-bottom: 20px; 
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading); 
+  color: var(--sc-navy);
+  font-weight: 700;
+}
+
 .header-content { display: flex; justify-content: space-between; align-items: center; }
-.admin-header { margin-bottom: 30px; border-bottom: 2px solid #DEE4FE; padding-bottom: 20px; }
-.mentor-row { display: flex; align-items: center; justify-content: space-between; padding: 20px; background: #fff; border: 1px solid #DEE4FE; border-radius: 12px; margin-bottom: 15px; }
+
+.mentor-row { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  padding: 20px; 
+  background: #fff; 
+  border: 1px solid var(--sc-light-purple); 
+  border-radius: 12px; 
+  margin-bottom: 15px; 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.02); 
+}
+
 .info { display: flex; flex-direction: column; }
-.email { font-size: 0.85rem; color: #6b7280; }
-.status-pill { padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
-.pending { background: #DEE4FE; color: #3e55f8; }
-.verified { background: #e6fffa; color: #065f46; }
-.btn-success { background: #2DE1AA; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; }
-.btn-danger { background: #ff4d4d; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; }
-.logout-btn { background: #3e55f8; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+
+.email { 
+  font-size: 0.85rem; 
+  color: #6b7280; 
+  font-family: var(--font-body);
+}
+
+.status-pill { 
+  padding: 4px 12px; 
+  border-radius: 20px; 
+  font-size: 0.8rem; 
+  font-weight: 800; 
+  text-transform: uppercase;
+}
+
+.pending { 
+  background: var(--sc-light-purple); 
+  color: var(--sc-blue); 
+}
+
+.verified { 
+  background: #e6fffa; 
+  color: var(--sc-green); 
+}
+
+.btn-success { 
+  background: var(--sc-green); 
+  color: white; 
+  border: none; 
+  padding: 10px 16px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+.btn-danger { 
+  background: #ff4d4d; 
+  color: white; 
+  border: none; 
+  padding: 10px 16px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-family: var(--font-heading);
+}
+
+.logout-btn { 
+  background: var(--sc-blue); 
+  color: white; 
+  border: none; 
+  padding: 8px 16px; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  font-family: var(--font-heading);
+}
+
 .info-group { display: flex; align-items: center; gap: 15px; }
 
 .admin-thumbnail {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #DEE4FE;
-}
-
-.placeholder {
-  background: #f3f4f6;
-  font-size: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #9ca3af;
-  text-align: center;
-}
-
-.admin-thumbnail {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  object-fit: cover; /* Ensures the photo doesn't stretch */
+  object-fit: cover; 
+  border: 2px solid var(--sc-light-purple);
   margin-right: 15px;
-  border: 2px solid #DEE4FE;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #f3f4f6;
-  font-size: 10px;
-  color: #9ca3af;
 }
+
 .view-id-link {
   font-size: 0.8rem;
-  color: #3e55f8;
+  color: var(--sc-blue); 
   text-decoration: underline;
   margin-top: 4px;
   display: block;
