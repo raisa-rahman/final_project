@@ -75,3 +75,16 @@ Route::post('/login', function (Request $request) {
 });
 
 Route::get('/universities', fn () => \App\Models\University::all());
+
+Route::post('/login', function (Request $request) {
+    $credentials = $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
+
+    if (Auth::attempt($credentials)) {
+        return response()->json(['status' => 'success', 'user' => Auth::user()]);
+    }
+
+    return response()->json(['message' => 'Invalid credentials'], 401);
+});
