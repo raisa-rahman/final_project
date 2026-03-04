@@ -6,93 +6,58 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MentorProfileController;
 use App\Http\Controllers\DirectoryController;
 use App\Http\Controllers\MeetingController;
+use App\Http\Controllers\StudentProfileController;
+
+Route::get('/api/universities', fn () => \App\Models\University::all());
+Route::get('/universities', fn () => \App\Models\University::all());
+Route::get('/mentors/directory', [DirectoryController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/mentors/directory', [App\Http\Controllers\DirectoryController::class, 'index']);
-    Route::post('/admin/mentors/{profile}/toggle-verify', [MentorProfileController::class, 'toggleVerify']);
-    Route::post('/mentors/{id}/favorite', [StudentProfileController::class, 'toggleFavorite']);
-    Route::get('/mentor/profile', [App\Http\Controllers\MentorProfileController::class, 'show']);
-    Route::put('/mentor/profile', [App\Http\Controllers\MentorProfileController::class, 'update']);
-    Route::get('/availabilities', [App\Http\Controllers\AvailabilityController::class, 'index']);
-    Route::post('/availabilities', [App\Http\Controllers\AvailabilityController::class, 'store']);
-    Route::delete('/availabilities/{id}', [App\Http\Controllers\AvailabilityController::class, 'destroy']);
-    Route::get('/mentor/default-availability', [App\Http\Controllers\DefaultAvailabilityController::class, 'index']);
-    Route::post('/mentor/default-availability', [App\Http\Controllers\DefaultAvailabilityController::class, 'store']);
-    Route::put('/mentor/default-availability/{id}', [DefaultAvailabilityController::class, 'update']);
-    Route::get('/mentors/profile/{id}', [DirectoryController::class, 'showPublic']);
-    Route::get('/student/favorites', [StudentProfileController::class, 'getFavorites']);
-    Route::put('/mentor/default-availability/{id}', [App\Http\Controllers\DefaultAvailabilityController::class, 'update']);
-    Route::delete('/mentor/default-availability/{id}', [App\Http\Controllers\DefaultAvailabilityController::class, 'destroy']);
-    Route::get('/auth/google', [GoogleCalendarController::class, 'redirectToGoogle']);
-    Route::get('/auth/google/callback', [GoogleCalendarController::class, 'handleGoogleCallback']);
-    Route::get('/mentor/google-sync', [GoogleCalendarController::class, 'syncAvailability']);
-    Route::post('/meetings/request', [MeetingController::class, 'store']);
-    Route::get('/student/meetings', [App\Http\Controllers\MeetingController::class, 'studentIndex']);
-    Route::get('/mentor/meetings/requests', [MeetingController::class, 'requests']);
-    Route::get('/mentor/meetings/upcoming', [MeetingController::class, 'upcoming']);
-    Route::post('/mentor/meetings/{id}/{action}', [MeetingController::class, 'handleAction']);
-    Route::post('/mentor/meetings/{id}/approve', [MeetingController::class, 'approve']);
-    Route::post('/meetings/{id}/reschedule', [MeetingController::class, 'reschedule']);
-    Route::post('/meetings/{id}/cancel', [MeetingController::class, 'cancel']);
-    Route::post('/reviews', [App\Http\Controllers\ReviewController::class, 'store']);    
-});
+    Route::get('/user', fn (Request $request) => $request->user());
+    Route::put('/mentor/profile', function (Request $request) {
+        $request->validate(['subject_expertise' => 'required|string', 'university' => 'required|string', 'bio' => 'nullable|string']);
+        $profile = \App\Models\MentorProfile::updateOrCreate(
+            ['user_id' => Auth::id()],
+            $request->only(['subject_expertise', 'university', 'bio'])
+        );
+        return response()->json(['profile' => $profile]);
+    });
 
-Route::get('/mentors/directory', [DirectoryController::class, 'index']);
-Route::post('/admin/mentors/{profile}/toggle-verify', function (App\Models\MentorProfile $profile) {
-    $profile->is_verified = $profile->is_verified ? 0 : 1;
-    $profile->save();
+    Route::prefix('admin')->group(function () {
+        Route::get('/mentors', fn () => \App\Models\MentorProfile::with('user')->get());
+        
+        Route::post('/mentors/{id}/toggle-verify', function ($id) {
+            $profile = \App\Models\MentorProfile::findOrFail($id);
+            $profile->is_verified = !$profile->is_verified;
+            $profile->save();
+            return response()->json(['is_verified' => $profile->is_verified]);
+        });
 
-    return response()->json([
-        'status' => 'success',
-        'is_verified' => $profile->is_verified,
-        'mentor' => $profile
-    ]);
-});
-
-Route::post('/mentors/{id}/upload', function (Request $request, $id) {
-    $request->validate([
-        'file' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
-        'type' => 'required|string'
-    ]);
-
-    $profile = \App\Models\MentorProfile::findOrFail($id);
-
-    $path = $request->file('file')->store('mentors', 'public');
-
-    if ($request->type === 'photo') {
-        $profile->update(['profile_photo_path' => $path]);
-    } else {
-        $profile->update(['document_path' => $path]);
-    }
-
-    return response()->json(['message' => 'Uploaded successfully', 'path' => $path]);
-});
-
-Route::prefix('admin')->group(function () {
-    Route::get('/mentors', function () {
-return \App\Models\MentorProfile::with('user')->get();    });
-
-    Route::post('/mentors/{id}/toggle-verify', function ($id) {
-        $profile = MentorProfile::findOrFail($id);
-        $profile->is_verified = !$profile->is_verified;
-        $profile->save();
-
-        return response()->json(['message' => 'Status updated', 'is_verified' => $profile->is_verified]);
+        Route::post('/universities', function (Request $request) {
+            $data = $request->validate(['name' => 'required|string', 'country' => 'required|string']);
+            return response()->json(\App\Models\University::create($data));
+        });
+        
+        Route::put('/universities/{id}', function (Request $request, $id) {
+            $univ = \App\Models\University::findOrFail($id);
+            $univ->update($request->validate(['name' => 'required|string', 'country' => 'required|string']));
+            return response()->json($univ);
+        });
+        
+        Route::delete('/universities/{id}', function ($id) {
+            \App\Models\University::findOrFail($id)->delete();
+            return response()->json(['message' => 'Deleted']);
+        });
     });
 });
 
-Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-    return $request->user();
-});
-
-Route::get('/mentors', [MentorProfileController::class, 'index']);
-use App\Http\Controllers\StudentProfileController;
-
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/student/profile', [StudentProfileController::class, 'show']);
-    Route::put('/student/profile', [StudentProfileController::class, 'update']);
-    Route::get('/mentor/profile', [MentorProfileController::class, 'show']);
-    Route::put('/mentor/profile', [MentorProfileController::class, 'update']);
+Route::post('/mentors/{id}/upload', function (Request $request, $id) {
+    $request->validate(['file' => 'required|file|mimes:jpeg,png,jpg,pdf', 'type' => 'required|string']);
+    $profile = \App\Models\MentorProfile::findOrFail($id);
+    $path = $request->file('file')->store('mentors', 'public');
+    $column = ($request->type === 'photo') ? 'profile_photo_path' : 'document_path';
+    $profile->update([$column => $path]);
+    return response()->json(['path' => $path]);
 });
 
 Route::post('/login', function (Request $request) {
@@ -102,12 +67,11 @@ Route::post('/login', function (Request $request) {
     ]);
 
     if (Auth::attempt($credentials)) {
-        $user = Auth::user();
-        return response()->json([
-            'status' => 'success',
-            'user' => $user
-        ]);
+        $request->session()->regenerate();
+        return response()->json(['status' => 'success', 'user' => Auth::user()]);
     }
 
     return response()->json(['message' => 'Invalid credentials'], 401);
 });
+
+Route::get('/universities', fn () => \App\Models\University::all());

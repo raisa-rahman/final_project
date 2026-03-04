@@ -17,25 +17,21 @@ const onFileSelect = (event: any) => {
 
 const uploadFile = async () => {
     if (!selectedFile.value) return;
-    
     uploading.value = true;
-    const formData = new FormData();
     
-    formData.append(props.uploadType === 'photo' ? 'profile_photo' : 'document', selectedFile.value);
-    formData.append('profile_id', props.profileId.toString());
+    const formData = new FormData();
+    formData.append('file', selectedFile.value);
+    formData.append('type', props.uploadType);
     
     try {
-        await axios.post('http://localhost:8000/api/mentor/upload', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                'Accept': 'application/json' 
-            }
+        await axios.post(`http://localhost:8000/api/mentors/${props.profileId}/upload`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
         });
         emit('upload-success');
         selectedFile.value = null; 
-    } catch (err: any) {
-        console.error("Upload failed", err.response?.data);
-        alert("Upload failed. Ensure the file is an image (jpg/png) and under 2MB.");
+    } catch (err) {
+        console.error("Upload failed", err);
+        alert("Upload failed. Ensure the file is a valid image or PDF.");
     } finally {
         uploading.value = false;
     }
@@ -43,26 +39,36 @@ const uploadFile = async () => {
 </script>
 
 <template>
-  <div class="upload-box">
-    <label class="upload-label">
-      {{ uploadType === 'photo' ? 'Profile Picture' : 'Upload ID Document' }}
-    </label>
+  <div class="upload-container">
     <input 
       type="file" 
       @change="onFileSelect" 
-      class="file-input" 
-      :accept="uploadType === 'photo' ? 'image/jpeg,image/png' : 'application/pdf,image/jpeg,image/png'"
+      class="file-input"
+      :accept="uploadType === 'photo' ? 'image/*' : '.pdf,image/*'"
     />
-    <button @click="uploadFile" :disabled="!selectedFile || uploading" class="upload-btn">
+    
+    <button 
+      @click="uploadFile" 
+      :disabled="!selectedFile || uploading" 
+      class="upload-btn"
+    >
       {{ uploading ? 'Uploading...' : 'Click to Upload' }}
     </button>
   </div>
 </template>
 
 <style scoped>
-.upload-box { margin-top: 1rem; padding: 15px; border: 2px dashed #DEE4FE; border-radius: 8px; background: #f9faff; }
-.upload-label { display: block; font-weight: 600; margin-bottom: 8px; color: #1a1f3c; }
-.file-input { display: block; width: 100%; margin-bottom: 10px; }
-.upload-btn { background: #3e55f8; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 700; }
+.upload-container { margin-top: 10px; }
+.file-input { display: block; margin-bottom: 8px; font-size: 0.8rem; }
+.upload-btn {
+  background: #3e55f8;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  width: 100%;
+}
 .upload-btn:disabled { background: #ccc; cursor: not-allowed; }
 </style>

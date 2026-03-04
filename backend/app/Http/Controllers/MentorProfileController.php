@@ -10,12 +10,13 @@ class MentorProfileController extends Controller
     public function update(Request $request) {
         $request->validate([
             'subject_expertise' => 'required|string|max:255',
+            'university' => 'required|string|max:255', 
             'bio' => 'nullable|string|max:1000',
         ]);
 
         $profile = \App\Models\MentorProfile::updateOrCreate(
             ['user_id' => $request->user()->id],
-            $request->only(['subject_expertise', 'bio'])
+            $request->only(['subject_expertise', 'university', 'bio'])
         );
 
         return response()->json(['message' => 'Profile updated!', 'profile' => $profile]);

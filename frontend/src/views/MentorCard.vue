@@ -36,7 +36,6 @@ const handleFavorite = async () => {
     <div class="rating-display" v-if="mentor.rating_avg && Number(mentor.rating_avg) > 0">
     <span class="stars">★</span> 
     <strong>{{ Number(mentor.rating_avg).toFixed(1) }}</strong> 
-    <span class="review-count">({{ mentor.reviews_count || 0 }} reviews)</span>
 </div>
 <div v-else class="no-rating">No reviews yet</div>
 

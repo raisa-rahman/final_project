@@ -5,101 +5,213 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter(); 
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
+interface User { id: number; name: string; email: string; }
+interface Mentor { 
+  id: number; is_verified: boolean | number; user: User; 
+  profile_photo_path?: string; document_path?: string; 
 }
+interface University { id: number; name: string; country: string; }
 
-interface Mentor {
-  id: number;
-  is_verified: boolean | number;
-  user: User;
-  profile_photo_path?: string;
-  document_path?: string; 
-}
+const mentors = ref<Mentor[]>([]);
+const universities = ref<University[]>([]);
+const loading = ref(true);
+
+const newUniversityName = ref('');
+const newUniversityCountry = ref('');
+const isSubmittingUniv = ref(false);
+const editingUnivId = ref<number | null>(null);
+const editUnivData = ref({ name: '', country: '' });
+
+const fetchData = async () => {
+  loading.value = true;
+  try {
+    const [mentorRes, univRes] = await Promise.all([
+      axios.get('http://localhost:8000/api/admin/mentors', { withCredentials: true }),
+      axios.get('http://localhost:8000/api/universities')
+    ]);
+    mentors.value = mentorRes.data;
+    universities.value = univRes.data;
+  } catch (err) {
+    console.error("Failed to fetch data", err);
+  } finally { loading.value = false; }
+};
+
+const addUniversity = async () => {
+    if (!newUniversityName.value || !newUniversityCountry.value) return alert("Fill all fields");
+    isSubmittingUniv.value = true;
+    try {
+        await axios.post('http://localhost:8000/api/admin/universities', {
+            name: newUniversityName.value, country: newUniversityCountry.value
+        });
+        newUniversityName.value = ''; newUniversityCountry.value = '';
+        fetchData();
+    } catch (err) { alert("Error adding record"); } 
+    finally { isSubmittingUniv.value = false; }
+};
+
+const deleteUniversity = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this university?")) return;
+    try {
+        await axios.delete(`http://localhost:8000/api/admin/universities/${id}`);
+        fetchData();
+    } catch (err) { alert("Error deleting university"); }
+};
+
+const startEditUniv = (univ: University) => {
+    editingUnivId.value = univ.id;
+    editUnivData.value = { name: univ.name, country: univ.country };
+};
+
+const saveUnivEdit = async (id: number) => {
+    try {
+        await axios.put(`http://localhost:8000/api/admin/universities/${id}`, editUnivData.value);
+        editingUnivId.value = null;
+        fetchData();
+    } catch (err) { alert("Error updating university"); }
+};
+
+const toggleVerification = async (profileId: number) => {
+    try {
+        await axios.post(`http://localhost:8000/api/admin/mentors/${profileId}/toggle-verify`);
+        fetchData();
+    } catch (err) { alert("Error updating status"); }
+};
 
 const adminLogout = async () => {
     await axios.post('http://localhost:8000/logout');
     router.push('/adminlogin');
 };
 
-const mentors = ref<Mentor[]>([]);
-const loading = ref(true);
 
-const fetchAllMentors = async () => {
-    try {
-        const response = await axios.get('http://localhost:8000/api/admin/mentors', { 
-            withCredentials: true 
-        });
-        mentors.value = response.data;
-    } catch (err) {
-        console.error("Failed to fetch mentors", err);
-    } finally {
-        loading.value = false;
-    }
-};
-
-const toggleVerification = async (profileId: number) => {
-    try {
-        await axios.post(`/api/admin/mentors/${profileId}/toggle-verify`);
-        fetchAllMentors();
-    } catch (err) {
-        alert("Error updating status");
-    }
-};
-
-onMounted(fetchAllMentors);
+onMounted(fetchData);
 </script>
+
 <template>
   <div class="admin-dashboard">
     <header class="admin-header">
         <div class="header-content">
-            <h2>Mentor Verification Management</h2>
+            <h2>Admin Management Portal</h2>
             <button @click="adminLogout" class="logout-btn">Admin Logout</button>
         </div>
-        <p>Review and approve mentor applications</p>
     </header>
 
     <div v-if="loading">Loading records...</div>
     
-    <div v-else class="mentor-list">
-      <div v-for="mentor in mentors" :key="mentor.id" class="mentor-row">
-        
-        <div class="info-group">
-           <img v-if="mentor.profile_photo_path" 
-                :src="'http://localhost:8000/storage/' + mentor.profile_photo_path" 
-                class="admin-thumbnail" />
-           <div v-else class="admin-thumbnail placeholder">No Photo</div>
-           
-           <div class="info">
-             <strong>{{ mentor.user?.name }}</strong>
-             <span class="email">{{ mentor.user?.email }}</span>
-             
-             <a v-if="mentor.document_path" 
-                :href="'http://localhost:8000/storage/' + mentor.document_path" 
-                target="_blank" 
-                class="view-id-link">
-                View University ID
-             </a>
-             <span v-else class="no-id">No ID Uploaded</span>
-           </div>
-        </div>
-        
-        <div class="status-pill" :class="mentor.is_verified ? 'verified' : 'pending'">
-          {{ mentor.is_verified ? 'Approved' : 'Unapproved' }}
-        </div>
+    <div v-else class="dashboard-grid">
+      <section class="admin-section">
+        <h3>Mentor Verification</h3>
+        <div class="mentor-list">
+          <div v-for="mentor in mentors" :key="mentor.id" class="mentor-row">
+            <div class="info-group">
+               <img v-if="mentor.profile_photo_path" 
+                    :src="'http://localhost:8000/storage/' + mentor.profile_photo_path" 
+                    class="admin-thumbnail" />
+               <div v-else class="admin-thumbnail placeholder">No Photo</div>
+               
+               <div class="info">
+                 <strong>{{ mentor.user?.name }}</strong>
+                 <span class="email">{{ mentor.user?.email }}</span>
+                 <a v-if="mentor.document_path" 
+                    :href="'http://localhost:8000/storage/' + mentor.document_path" 
+                    target="_blank" 
+                    class="view-id-link">View University ID</a>
+                 <span v-else class="no-id">No ID Uploaded</span>
+               </div>
+            </div>
+            
+            <div class="status-pill" :class="mentor.is_verified ? 'verified' : 'pending'">
+              {{ mentor.is_verified ? 'Approved' : 'Unapproved' }}
+            </div>
 
-        <button @click="toggleVerification(mentor.id)" :class="mentor.is_verified ? 'btn-danger' : 'btn-success'">
-          {{ mentor.is_verified ? 'Unapprove' : 'Approve Mentor' }}
-        </button>
+            <button @click="toggleVerification(mentor.id)" :class="mentor.is_verified ? 'btn-danger' : 'btn-success'">
+              {{ mentor.is_verified ? 'Unapprove' : 'Approve' }}
+            </button>
+          </div>
+        </div>
+      </section>
 
+      <section class="admin-section">
+  <h3>University Management</h3>
+  
+  <div class="university-form card">
+      <p>Add New Institution:</p>
+      <div class="form-row">
+          <input v-model="newUniversityName" placeholder="Name" class="admin-input" />
+          <input v-model="newUniversityCountry" placeholder="Country" class="admin-input" />
+          <button @click="addUniversity" :disabled="isSubmittingUniv" class="btn-success">
+              {{ isSubmittingUniv ? 'Saving...' : 'Add' }}
+          </button>
       </div>
+  </div>
+
+  <div class="university-list">
+    <div v-for="univ in universities" :key="univ.id" class="univ-row">
+      <template v-if="editingUnivId !== univ.id">
+        <div class="univ-info">
+          <strong>{{ univ.name }}</strong> ({{ univ.country }})
+        </div>
+        <div class="univ-actions">
+          <button @click="startEditUniv(univ)" class="btn-edit">Edit</button>
+          <button @click="deleteUniversity(univ.id)" class="btn-text danger">Delete</button>
+        </div>
+      </template>
+
+      <template v-else>
+        <div class="edit-univ-row">
+          <input v-model="editUnivData.name" class="admin-input small" />
+          <input v-model="editUnivData.country" class="admin-input small" />
+          <button @click="saveUnivEdit(univ.id)" class="btn-text success">Save</button>
+          <button @click="editingUnivId = null" class="btn-text">Cancel</button>
+        </div>
+      </template>
+    </div>
+  </div>
+</section>
     </div>
   </div>
 </template>
 
 <style scoped>
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 2rem;
+}
+
+.admin-section {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--sc-light-purple);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+}
+
+.university-list {
+  margin-top: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.univ-row {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.admin-input {
+  padding: 8px;
+  border: 1px solid var(--sc-light-purple);
+  border-radius: 6px;
+}
+
 :root {
   --sc-blue: #3e55f8;       
   --sc-yellow: #F4BD3F;     
@@ -115,7 +227,7 @@ onMounted(fetchAllMentors);
   padding: 40px; 
   max-width: 1000px; 
   margin: 0 auto; 
-  font-family: var(--font-body); /* Standardized typography [cite: 3630] */
+  font-family: var(--font-body); 
   background-color: #fbfcff;
   min-height: 100vh;
 }
@@ -231,4 +343,41 @@ h1, h2, h3 {
   color: #9ca3af;
   font-style: italic;
 }
+
+.univ-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.univ-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-univ-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.admin-input.small {
+  padding: 4px 8px;
+  font-size: 0.85rem;
+}
+
+.btn-edit {
+  background: none;
+  border: 1px solid var(--sc-blue);
+  color: var(--sc-blue);
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.btn-text.success { color: var(--sc-green); }
+.btn-text.danger { color: #ff4d4d; }
 </style>
