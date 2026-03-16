@@ -8,4 +8,5 @@ return [
     'allowed_origins_patterns' => [],
     'exposed_headers' => [],
     'max_age' => 0,
+    'allowed_headers' => ['*'],
 ];

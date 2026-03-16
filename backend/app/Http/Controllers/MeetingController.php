@@ -58,8 +58,10 @@ public function studentIndex()
             return [
                 'id' => $meeting->id,
                 'mentor_name' => $meeting->mentorProfile->user->name,
+                'mentor_profile_id' => $meeting->mentor_profile_id,
                 'date' => $meeting->date,
                 'start_time' => $meeting->start_time,
+                'end_time' => $meeting->end_time,
                 'status' => $meeting->status,
                 'meeting_link' => $meeting->meeting_link
             ];
@@ -68,7 +70,12 @@ public function studentIndex()
 
 public function requests()
 {
-    $mentorId = Auth::user()->mentorProfile->id;
+    $user = Auth::user();
+    if (!$user || !$user->mentorProfile) {
+        return response()->json([]); 
+    }
+
+    $mentorId = $user->mentorProfile->id;
     return Meeting::where('mentor_profile_id', $mentorId)
         ->where('status', 'pending')
         ->with('student') 
@@ -77,7 +84,13 @@ public function requests()
 
 public function upcoming()
 {
-    $mentorId = Auth::user()->mentorProfile->id;
+    $user = Auth::user();
+
+    if (!$user || !$user->mentorProfile) {
+        return response()->json([]); 
+    }
+
+    $mentorId = $user->mentorProfile->id;
     return Meeting::where('mentor_profile_id', $mentorId)
         ->where('status', 'approved')
         ->with('student') 
@@ -130,10 +143,11 @@ public function handleAction($id, $action)
 
 public function reschedule(Request $request, $id)
 {
+    
     $request->validate([
         'date' => 'required|date|after_or_equal:today',
-        'start_time' => 'required',
-        'end_time' => 'required|after:start_time', 
+        'start_time' => 'required|date_format:H:i', 
+        'end_time' => 'required|date_format:H:i|after:start_time', 
     ]);
 
     $meeting = Meeting::findOrFail($id);
@@ -176,3 +190,4 @@ public function cancel($id)
     return response()->json(['message' => 'Meeting cancelled successfully']);
 }
 }
+

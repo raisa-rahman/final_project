@@ -24,7 +24,8 @@ const fetchMentorDetails = async () => {
         const response = await axios.get(`http://localhost:8000/api/mentors/profile/${mentorId}`);
         mentor.value = response.data;
     } catch (err) {
-        console.error("API Error Details:", err.response?.data);
+        console.error("API Error:", err.response?.data);
+        alert("Could not load mentor profile. They may no longer be available.");
         router.push('/dashboard'); 
     } finally {
         loading.value = false;
@@ -126,8 +127,7 @@ onMounted(fetchMentorDetails);
           </div>
         </div>
       </div>
-    </div>
-    <section class="reviews-section" v-if="mentor.reviews && mentor.reviews.length > 0">
+      <section class="reviews-section" v-if="mentor.reviews && mentor.reviews.length > 0">
     <h3 class="section-title">Student Feedback</h3>
     <div v-for="review in mentor.reviews" :key="review.id" class="review-item">
         <div class="review-header">
@@ -137,6 +137,7 @@ onMounted(fetchMentorDetails);
         <p class="review-comment">{{ review.comment || 'No comment provided.' }}</p>
     </div>
 </section>
+    </div>
   </div>
 </template>
 

@@ -7,21 +7,22 @@ use Illuminate\Http\Request;
 
 class DirectoryController extends Controller{
     public function index(Request $request) {
-        $query = MentorProfile::with(['user'])->where('is_verified', 1);
-        if ($request->filled('subject') && $request->subject !== 'undefined') {
-            $query->where('subject_expertise', 'like', '%' . $request->subject . '%');
-        }
-        if ($request->filled('country') && $request->country !== 'undefined') {
-            $query->where('target_country', $request->country);
-        }
-        return response()->json($query->get());
+    $query = MentorProfile::with(['user', 'university'])
+        ->withCount('reviews')
+        ->withAvg('reviews', 'rating')
+        ->where('is_verified', 1);
 
-    return MentorProfile::with('user')
-        ->where('is_verified', 1)
-        ->withCount('reviews') 
-        ->get(); 
-
+    if ($request->filled('subject') && $request->subject !== 'undefined') {
+        $query->where('subject_expertise', 'like', '%' . $request->subject . '%');
     }
+    
+    if ($request->filled('country') && $request->country !== 'undefined') {
+        $query->where('target_country', $request->country);
+    }
+
+    return response()->json($query->get());
+}
+
     public function showPublic($id)
 {
     $mentor = MentorProfile::with(['user', 'university', 'reviews'])

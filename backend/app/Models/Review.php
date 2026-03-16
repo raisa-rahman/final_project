@@ -15,6 +15,6 @@ class Review extends Model
     ];
 
     public function mentorProfile() {
-        return $this->belongsTo(MentorProfile::class);
+        return $this->belongsTo(MentorProfile::class, 'mentor_profile_id');
     }
 }

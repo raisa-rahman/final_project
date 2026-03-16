@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+
 use App\Models\Review;
 use App\Models\Meeting;
 use App\Models\MentorProfile;
@@ -13,26 +14,32 @@ class ReviewController extends Controller
 public function store(Request $request)
 {
     $request->validate([
-        'meeting_id' => 'required|exists:meetings,id',
+    'meeting_id' => 'required|exists:meetings,id|unique:reviews,meeting_id',
+    'mentor_profile_id' => 'required', 
         'rating' => 'required|integer|min:1|max:5',
-        'comment' => 'nullable|string'
+        'comment' => 'nullable|string|max:500'
     ]);
 
-    $meeting = \App\Models\Meeting::findOrFail($request->meeting_id);
-    $mentorId = $meeting->mentor_profile_id; 
+    $studentId = \Auth::id();
+    if (!$studentId) {
+        return response()->json(['message' => 'User not authenticated'], 401);
+    }
 
-    \App\Models\Review::create([
-        'student_id' => \Illuminate\Support\Facades\Auth::id(),
-        'meeting_id' => $meeting->id,
-        'mentor_profile_id' => $mentorId,
-        'rating' => $request->rating,
-        'comment' => $request->comment,
-    ]);
+    try {
+        $review = new \App\Models\Review();
+        $review->meeting_id = $request->meeting_id;
+        $review->student_id = $studentId;
+        $review->mentor_profile_id = $request->mentor_profile_id;
+        $review->rating = (int)$request->rating;
+        $review->comment = $request->comment;
+        $review->save();
+        $avg = \App\Models\Review::where('mentor_profile_id', $request->mentor_profile_id)->avg('rating') ?? 0;
+        $mentor = \App\Models\MentorProfile::findOrFail($request->mentor_profile_id);
+        $mentor->update(['rating_avg' => round((float)$avg, 1)]);
 
-    $mentor = \App\Models\MentorProfile::findOrFail($mentorId);
-    $newAverage = \App\Models\Review::where('mentor_profile_id', $mentorId)->avg('rating');
-    $mentor->update(['rating_avg' => round($newAverage, 2)]);
-
-    return response()->json(['message' => 'Feedback saved and profile updated'], 201);
-}
+        return response()->json(['message' => 'Review submitted successfully'], 201);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Backend Error: ' . $e->getMessage()], 500);
+    }
+    }
 }

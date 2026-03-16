@@ -141,13 +141,41 @@ const startEdit = (meeting) => {
 };
 
 const saveReschedule = async (id) => {
+    const payload = {
+        date: editData.value.date,
+        start_time: editData.value.start_time.substring(0, 5),
+        end_time: editData.value.end_time.substring(0, 5)
+    };
+
     try {
-        await axios.post(`http://localhost:8000/api/meetings/${id}/reschedule`, editData.value);
+        await axios.post(`http://localhost:8000/api/meetings/${id}/reschedule`, payload);
         editingMeetingId.value = null;
         fetchData(); 
+        alert("Reschedule successful! The session status has been reset to pending.");
     } catch (err) {
-        alert("Error: Ensure the date is today or later.");
+        const errorMsg = err.response?.data?.errors?.end_time?.[0] 
+            || "Error: Ensure the end time is after the start time and the date is today or later.";
+        alert(errorMsg);
     }
+};
+
+const calculateDuration = (start, end) => {
+    if (!start || !end) return '';
+    const [sHours, sMin] = start.split(':').map(Number);
+    const [eHours, eMin] = end.split(':').map(Number);
+    
+    const startTime = new Date(0, 0, 0, sHours, sMin);
+    const endTime = new Date(0, 0, 0, eHours, eMin);
+    
+    let diff = (endTime.getTime() - startTime.getTime()) / 1000 / 60; 
+    if (diff < 0) diff += 1440; 
+    
+    const hours = Math.floor(diff / 60);
+    const mins = diff % 60;
+    
+    return hours > 0 
+        ? `${hours} hr ${mins > 0 ? mins + ' min' : ''}` 
+        : `${mins} min`;
 };
 
 
@@ -174,163 +202,136 @@ onMounted(fetchData);
 
     <div class="grid-layout">
       <div class="profile-card">
-  <div class="header-with-action">
-    <h2>Professional Profile</h2>
-    <button @click="isEditingProfile = !isEditingProfile" class="btn-text">
-      {{ isEditingProfile ? 'Cancel' : 'Edit Details' }}
-    </button>
-  </div>
-
-  <div v-if="isEditingProfile" class="edit-form">
-    <div class="form-group">
-        <label>Subject Expertise</label>
-        <input v-model="profileForm.subject_expertise" class="resched-input">
-    </div>
-    
-    <div class="form-group">
-        <label>University</label>
-        <input 
-            v-model="profileForm.university" 
-            type="text" 
-            class="resched-input" 
-            placeholder="Enter your university name"
-        />
-    </div>
-
-    <div class="form-group">
-        <label>Professional Bio</label>
-        <textarea 
-            v-model="profileForm.bio" 
-            class="resched-input" 
-            rows="4" 
-            placeholder="Tell students about your background..."
-            style="width: 100%; resize: vertical; margin-top: 0.5rem;"
-        ></textarea>
-    </div>
-    
-    <button @click="saveProfile" class="btn-text success">Save Changes</button>
-</div>
-
-<div v-else class="profile-upload-wrapper">
-    <div class="mentor-photo-container">
+        <div class="header-with-action">
+          <h2>Professional Profile</h2>
+          <button @click="isEditingProfile = !isEditingProfile" class="btn-text">
+            {{ isEditingProfile ? 'Cancel' : 'Edit Details' }}
+          </button>
         </div>
-    <div class="details-display">
-    <p><strong>Expertise:</strong> {{ mentorProfile.subject_expertise || 'Not set' }}</p>
-    
-    <p><strong>University:</strong> 
-        {{ typeof mentorProfile.university === 'object' ? mentorProfile.university.name : (mentorProfile.university || 'Not set') }}
-    </p>
-    
-    <p><strong>Bio:</strong> {{ mentorProfile.bio || 'No bio provided.' }}</p>
-</div>
-</div>
-  
-  <div v-if="!isEditingProfile" class="photo-upload-section">
-    <div v-if="mentorProfile.id">
-        <label>Update Profile Picture</label>
-        <FileUpload 
-            uploadType="photo" 
-            :profileId="mentorProfile.id" 
-            @upload-success="fetchData" 
-        />
-    </div>
-</div>
-  <div>
-    <FileUpload 
-        uploadType="photo" 
-        :profileId="mentorProfile.id" 
-        @upload-success="fetchData" 
-        v-if="!mentorProfile.profile_photo_path"
-    />
-</div>
 
-</div>
+        <div v-if="isEditingProfile" class="edit-form">
+          <div class="form-group">
+            <label>Subject Expertise</label>
+            <input v-model="profileForm.subject_expertise" class="resched-input">
+          </div>
+          <div class="form-group">
+            <label>University</label>
+            <input v-model="profileForm.university" type="text" class="resched-input" />
+          </div>
+          <div class="form-group">
+            <label>Professional Bio</label>
+            <textarea v-model="profileForm.bio" class="resched-input" rows="4"></textarea>
+          </div>
+          <button @click="saveProfile" class="btn-text success">Save Changes</button>
+        </div>
+
+        <div v-else class="profile-upload-wrapper">
+          <div class="mentor-photo-container">
+            <img v-if="mentorProfile.profile_photo_path" :src="`http://localhost:8000/storage/${mentorProfile.profile_photo_path}`" class="mentor-dashboard-img">
+            <div v-else class="photo-placeholder">{{ user?.name?.charAt(0) }}</div>
+          </div>
+          <div class="details-display">
+            <p><strong>Expertise:</strong> {{ mentorProfile.subject_expertise || 'Not set' }}</p>
+            <p><strong>University:</strong> {{ typeof mentorProfile.university === 'object' ? mentorProfile.university.name : (mentorProfile.university || 'Not set') }}</p>
+            <p><strong>Bio:</strong> {{ mentorProfile.bio || 'No bio provided.' }}</p>
+          </div>
+        </div>
+      </div>
 
       <div class="verification-card">
         <h2>Identity Verification</h2>
         <div v-if="mentorProfile.id" class="upload-section">
-          <div v-if="Number(mentorProfile.is_verified) === 1" class="verified-badge">
-            <span class="success-icon">✔️ Verified</span>
-          </div>
+          <div v-if="Number(mentorProfile.is_verified) === 1" class="verified-badge">✔️ Verified</div>
           <div v-else>
-            <p class="subtitle">Upload a valid Professional ID or Passport.</p>
             <FileUpload uploadType="document" :profileId="mentorProfile.id" @upload-success="fetchData" />
           </div>
         </div>
-        
         <hr class="section-divider" />
-
         <h2>Average Rating</h2>
         <div class="rating-summary" v-if="mentorProfile.rating_avg > 0">
-          <div class="stat-big">
-            <span class="star-large">★</span>
-            <span class="avg-val">{{ Number(mentorProfile.rating_avg).toFixed(1) }}</span>
-          </div>
-          <p class="review-meta">Based on {{ mentorProfile.reviews_count }} reviews</p>
+          <span class="avg-val">{{ Number(mentorProfile.rating_avg).toFixed(1) }}</span>
+          <p>Based on {{ mentorProfile.reviews_count }} reviews</p>
         </div>
         <div v-else class="empty-state">No ratings yet.</div>
       </div>
     </div>
 
     <div class="grid-layout meetings-section" style="margin-top: 2rem;">
-        <div class="profile-card">
-            <h2>Meeting Requests</h2>
-            <div v-if="meetingRequests.length === 0" class="empty-state">No pending requests.</div>
-            <div v-for="req in meetingRequests" :key="req.id" class="meeting-item-card">
-                <div class="booking-content">
-                    <div class="meeting-info">
-                        <strong>{{ req.student_name }}</strong>
-                        <span v-if="editingMeetingId !== req.id">{{ formatLongDate(req.date) }} at {{ format12Hour(req.start_time) }}</span>
-                        <div v-else class="edit-inputs">
-                            <input v-model="editData.date" type="date" class="resched-input">
-                            <input v-model="editData.start_time" type="time" class="resched-input">
-                        </div>
-                    </div>
-                    <div class="action-row-horizontal">
-                        <template v-if="editingMeetingId !== req.id">
-                            <button @click="handleMeetingAction(req.id, 'approve')" class="btn-text success">Accept</button>
-                            <button @click="startEdit(req)" class="btn-text">Reschedule</button>
-                            <button @click="handleMeetingAction(req.id, 'decline')" class="btn-text danger">Decline</button>
-                        </template>
-                        <template v-else>
-                            <button @click="saveReschedule(req.id)" class="btn-text success">Save</button>
-                            <button @click="editingMeetingId = null" class="btn-text">Back</button>
-                        </template>
-                    </div>
-                </div>
+      <div class="profile-card">
+        <h2>Meeting Requests</h2>
+        <div v-if="meetingRequests.length === 0" class="empty-state">No pending requests.</div>
+        <div v-for="req in meetingRequests" :key="req.id" class="meeting-item-card">
+          <div class="booking-content">
+            <div class="meeting-info">
+              <strong>{{ req.student_name }}</strong>
+              <div v-if="editingMeetingId !== req.id">
+                {{ formatLongDate(req.date) }} <br>
+                {{ format12Hour(req.start_time) }} – {{ format12Hour(req.end_time) }}
+              </div>
+              <div v-else class="edit-inputs">
+                <input v-model="editData.date" type="date">
+                <input v-model="editData.start_time" type="time">
+                <input v-model="editData.end_time" type="time">
+              </div>
             </div>
+            <div class="action-row-horizontal">
+              <template v-if="editingMeetingId !== req.id">
+                <button @click="handleMeetingAction(req.id, 'approve')" class="btn-text success">Accept</button>
+                <button @click="startEdit(req)" class="btn-text">Reschedule</button>
+              </template>
+              <template v-else>
+                <button @click="saveReschedule(req.id)" class="btn-text success">Save</button>
+                <button @click="editingMeetingId = null" class="btn-text">Back</button>
+              </template>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div class="verification-card">
-            <h2>Confirmed Meetings</h2>
-            <div v-if="upcomingMeetings.length === 0" class="empty-state">No upcoming meetings.</div>
-            <div v-for="meeting in upcomingMeetings" :key="meeting.id" class="meeting-item-card confirmed">
-                <div class="booking-content">
-                    <div class="meeting-info">
-                        <strong>{{ meeting.student_name }}</strong>
-                        <span v-if="editingMeetingId !== meeting.id">{{ formatLongDate(meeting.date) }} at {{ format12Hour(meeting.start_time) }}</span>
-                        <div v-else class="edit-inputs">
-                            <input v-model="editData.date" type="date" class="resched-input">
-                            <input v-model="editData.start_time" type="time" class="resched-input">
-                        </div>
-                    </div>
-                    <div class="action-row-horizontal">
-                        <template v-if="editingMeetingId !== meeting.id">
-                            <button @click="startEdit(meeting)" class="btn-text">Reschedule</button>
-                            <button @click="handleMeetingAction(meeting.id, 'decline')" class="btn-text danger">Cancel</button>
-                        </template>
-                        <template v-else>
-                            <button @click="saveReschedule(meeting.id)" class="btn-text success">Save</button>
-                            <button @click="editingMeetingId = null" class="btn-text">Back</button>
-                        </template>
-                    </div>
-                </div>
-                <div class="booking-footer" v-if="meeting.meeting_link && editingMeetingId !== meeting.id">
-                    <a :href="meeting.meeting_link" target="_blank" class="join-btn">🎥 Join Jitsi</a>
-                    <button @click="addToGoogleCalendar(meeting)" class="google-sync-btn">🗓️ Sync Google</button>
-                </div>
-            </div>
+      <div class="verification-card">
+  <h2>Confirmed Meetings</h2>
+  <div v-if="upcomingMeetings.length === 0" class="empty-state">No upcoming meetings.</div>
+  
+  <div v-for="meeting in upcomingMeetings" :key="meeting.id" class="meeting-item-card confirmed">
+    <div class="booking-content">
+      <div class="meeting-info">
+        <strong>{{ meeting.student_name }}</strong>
+        <div v-if="editingMeetingId !== meeting.id">
+          {{ formatLongDate(meeting.date) }} <br> 
+          {{ format12Hour(meeting.start_time) }} – {{ format12Hour(meeting.end_time) }}
+          <div class="duration-label">
+            ⏱️ {{ calculateDuration(meeting.start_time, meeting.end_time) }}
+          </div>
         </div>
+        
+        <div v-else class="edit-inputs">
+          <input v-model="editData.date" type="date" class="resched-input">
+          <input v-model="editData.start_time" type="time" class="resched-input">
+          <input v-model="editData.end_time" type="time" class="resched-input">
+        </div>
+      </div>
+
+      <div class="action-row-horizontal">
+        <template v-if="editingMeetingId !== meeting.id">
+          <button @click="startEdit(meeting)" class="btn-text">Reschedule</button>
+        </template>
+        <template v-else>
+          <button @click="saveReschedule(meeting.id)" class="btn-text success">Save</button>
+          <button @click="editingMeetingId = null" class="btn-text">Back</button>
+        </template>
+      </div>
+    </div>
+
+    <div class="booking-footer" v-if="editingMeetingId !== meeting.id">
+      <a v-if="meeting.meeting_link" :href="meeting.meeting_link" target="_blank" class="join-btn">
+        🎥 Join Jitsi
+      </a>
+      <button @click="addToGoogleCalendar(meeting)" class="google-sync-btn">
+        🗓️ Sync Google
+      </button>
+    </div>
+  </div>
+      </div>
     </div>
   </div>
 </template>
@@ -387,5 +388,42 @@ onMounted(fetchData);
     margin-bottom: 0.5rem;
     line-height: 1.4;
     word-break: break-word; 
+}
+
+.edit-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.edit-label {
+    font-size: 0.7rem;
+    color: #666;
+    margin-bottom: -0.4rem;
+    font-weight: bold;
+}
+
+.resched-input {
+    padding: 8px;
+    border: 1px solid #DEE4FE;
+    border-radius: 6px;
+    width: 100%; 
+    max-width: 200px;
+}
+
+.duration-label {
+    display: inline-block;
+    background: #f3f4f6;
+    color: #4b5563;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 4px;
+    border: 1px solid #e5e7eb;
+}
+
+.meeting-info span {
+    line-height: 1.5;
+    display: block;
 }
 </style>

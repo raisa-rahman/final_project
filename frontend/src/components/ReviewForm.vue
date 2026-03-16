@@ -17,21 +17,28 @@ const isSubmitting = ref(false);
 const submitReview = async () => {
     if (rating.value === 0) return alert("Please select a star rating.");
     
+    console.log("Submitting with:", {
+        meeting_id: props.meetingId,
+        mentor_profile_id: props.mentorId
+    });
+
     isSubmitting.value = true;
     try {
-        await axios.post('http://localhost:8000/api/reviews', {
-            meeting_id: props.meetingId,
-            rating: rating.value,       
-            comment: comment.value       
-        });
+await axios.post('http://localhost:8000/api/reviews', {
+    meeting_id: props.meetingId,
+    mentor_profile_id: props.mentorId, 
+    rating: rating.value,       
+    comment: comment.value       
+});
         emit('review-submitted'); 
     } catch (err) {
-        console.error("Review failed:", err.response?.data);
-        alert("Submission failed. Check console for validation details.");
+        console.error("Detailed Error:", err.response?.data);
+        alert(err.response?.data?.message || "Submission failed. Please try again.");
     } finally {
         isSubmitting.value = false;
     }
 };
+
 </script>
 
 <template>

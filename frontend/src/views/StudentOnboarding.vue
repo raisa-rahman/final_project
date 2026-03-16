@@ -19,22 +19,33 @@ const form = ref({
 });
 
 const handleSubmit = async () => {
-    const endpoint = mode.value === 'signup' ? 'http://localhost:8000/register' : 'http://localhost:8000/api/login';
+    const endpoint = mode.value === 'signup' ? 'http://localhost:8000/api/register' : 'http://localhost:8000/api/login';
     
     try {
         await axios.get('http://localhost:8000/sanctum/csrf-cookie');
-        
         const response = await axios.post(endpoint, form.value);
-
         const userData = mode.value === 'signup' ? response.data : response.data.user;
         localStorage.setItem('user', JSON.stringify(userData));
+
+        if (mode.value === 'signup') {
+            alert("Account created!");
+        }
         
         if (userData.role === 'student') {
             router.push('/student/login/dashboard');
+        } else {
+            console.warn("User has incorrect role for this portal.");
+            alert("Unauthorized: This portal is for students only.");
         }
     } catch (error) {
-        console.error("Auth Error:", error.response?.data || error.message);
-        alert("Action failed. Please check your credentials.");
+        const errorData = error.response?.data;
+        console.error("Auth Error:", errorData || error.message);
+        
+        if (errorData?.errors?.email) {
+            alert("Error: The email has already been taken.");
+        } else {
+            alert("Action failed. Please check your credentials and try again.");
+        }
     }
 };
 

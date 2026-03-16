@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import logoUrl from '../assets/logo.png'; 
@@ -15,21 +15,23 @@ const form = ref({
     email: '',
     password: '',
     password_confirmation: '',
+    university_id: '',
     role: 'mentor'
 });
 
 const handleSubmit = async () => {
     try {
-        await axios.get('http://localhost:8000/sanctum/csrf-cookie');
-        await axios.post('http://localhost:8000/register', form.value, {
-            headers: { 'Accept': 'application/json' }
+        await axios.get('http://localhost:8000/sanctum/csrf-cookie', { withCredentials: true });
+        await axios.post('http://localhost:8000/api/register', form.value, {
+            headers: { 'Accept': 'application/json' },
+            withCredentials: true
         });
         
-        alert('Signed up successfully! Please log in to access your portal.');
+        alert('Signup request submitted! An administrator will verify your profile.');
         mode.value = 'login'; 
     } catch (error) {
-        console.error("Signup Error:", error.response?.data);
-        alert("Action failed. Check if email is already taken.");
+        console.error("Signup Error:", error.response?.data || error.message);
+        alert("Signup failed. Check console for details.");
     }
 };
 
@@ -58,6 +60,17 @@ const toggleMode = (newMode) => {
   mode.value = newMode;
   router.push(`/mentor/${newMode}`);
 };
+
+const universities = ref([]);
+
+onMounted(async () => {
+    try {
+        const response = await axios.get('http://localhost:8000/api/universities');
+        universities.value = response.data;
+    } catch (err) {
+        console.error("Failed to load universities", err);
+    }
+});
 </script>
 
 <template>
@@ -85,6 +98,16 @@ const toggleMode = (newMode) => {
           <label>
             Professional Email:
             <input v-model="form.email" type="email" required placeholder="name@company.com">
+          </label>
+
+          <label v-if="mode === 'signup'">
+            Your University:
+            <select v-model="form.university_id" required class="uni-select">
+              <option value="" disabled>Select your institution</option>
+              <option v-for="uni in universities" :key="uni.id" :value="uni.id">
+                {{ uni.name }} ({{ uni.country }})
+              </option>
+            </select>
           </label>
 
           <label>
@@ -242,5 +265,27 @@ input:focus {
   color: #3e55f8; 
   text-decoration: none; 
   font-weight: 600; 
+}
+
+.uni-select {
+  width: 100%;
+  padding: 12px;
+  margin-top: 6px;
+  border: 1px solid #DEE4FE; 
+  border-radius: 8px;
+  font-family: 'SF-UI Text', sans-serif;
+  font-size: 0.95rem;
+  background-color: white; 
+  transition: border-color 0.2s;
+  appearance: none; 
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+}
+
+.uni-select:focus {
+  outline: none;
+  border-color: #3e55f8; 
 }
 </style>

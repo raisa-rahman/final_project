@@ -191,8 +191,7 @@ const formatLongDate = (dateStr) => {
 };
 
 const editingMeetingId = ref(null);
-const editData = ref({ date: '', start_time: '' });
-
+const editData = ref({ date: '', start_time: '', end_time: '' });
 const format12Hour = (timeStr) => {
     if (!timeStr) return '';
     const [hours, minutes] = timeStr.split(':');
@@ -203,7 +202,11 @@ const format12Hour = (timeStr) => {
 
 const startEdit = (meeting) => {
     editingMeetingId.value = meeting.id;
-    editData.value = { date: meeting.date, start_time: meeting.start_time.substring(0,5) };
+    editData.value = { 
+        date: meeting.date, 
+        start_time: meeting.start_time.substring(0, 5),
+        end_time: meeting.end_time ? meeting.end_time.substring(0, 5) : '' 
+    };
 };
 
 const saveReschedule = async (id) => {
@@ -239,7 +242,28 @@ const categorizedMeetings = computed(() => {
 
 const activeReviewMeetingId = ref(null);
 const toggleReviewForm = (meetingId) => {
+    const meeting = sentRequests.value.find(r => r.id === meetingId);
+    console.log("Checking meeting data for review:", meeting);
     activeReviewMeetingId.value = activeReviewMeetingId.value === meetingId ? null : meetingId;
+};
+
+const calculateDuration = (start, end) => {
+    if (!start || !end) return '';
+    const [sHours, sMin] = start.split(':').map(Number);
+    const [eHours, eMin] = end.split(':').map(Number);
+    
+    const startTime = new Date(0, 0, 0, sHours, sMin);
+    const endTime = new Date(0, 0, 0, eHours, eMin);
+    
+    let diff = (endTime.getTime() - startTime.getTime()) / 1000 / 60; 
+    if (diff < 0) diff += 1440; 
+    
+    const hours = Math.floor(diff / 60);
+    const mins = diff % 60;
+    
+    return hours > 0 
+        ? `${hours} hr ${mins > 0 ? mins + ' min' : ''}` 
+        : `${mins} min`;
 };
 
 onMounted(() => {
@@ -269,87 +293,87 @@ onMounted(() => {
     </aside>
 
     <div class="booking-tracker-section">
-    <div class="section-header">
+      <div class="section-header">
         <h2>Your Meetings</h2>
         <div class="tab-toggle">
-            <button 
-                @click="currentTab = 'upcoming'" 
-                :class="{ active: currentTab === 'upcoming' }"
-                class="tab-btn"
-            >
-                Upcoming
-            </button>
-            <button 
-                @click="currentTab = 'past'" 
-                :class="{ active: currentTab === 'past' }"
-                class="tab-btn"
-            >
-                Past Sessions
-            </button>
-            
+          <button @click="currentTab = 'upcoming'" :class="{ active: currentTab === 'upcoming' }" class="tab-btn">Upcoming</button>
+          <button @click="currentTab = 'past'" :class="{ active: currentTab === 'past' }" class="tab-btn">Past Sessions</button>
         </div>
-    </div>
+      </div>
 
-    <div v-if="categorizedMeetings[currentTab].length === 0" class="empty-state-card">
+      <div v-if="categorizedMeetings[currentTab].length === 0" class="empty-state-card">
         <p v-if="currentTab === 'upcoming'">No upcoming sessions. Time to connect with a mentor!</p>
         <p v-else>No past sessions found.</p>
-    </div>
+      </div>
 
-    <div v-else class="request-list">
+      <div v-else class="request-list">
         <div v-for="request in categorizedMeetings[currentTab]" :key="request.id" class="request-item">
-            <div class="request-main">
-                <div class="mentor-meta">
-                    <strong>{{ request.mentor_name }}</strong>
-                    <span v-if="editingMeetingId !== request.id" class="date-display">
-                        {{ formatLongDate(request.date) }} at {{ format12Hour(request.start_time) }}
-                    </span>
-                    </div>
+          <div class="request-main">
+            <div class="mentor-meta">
+              <strong>{{ request.mentor_name }}</strong>
+              
+              <span v-if="editingMeetingId !== request.id" class="date-display">
+                {{ formatLongDate(request.date) }} <br>
+                {{ format12Hour(request.start_time) }} – {{ format12Hour(request.end_time) }}
+                <div v-if="request.end_time" class="duration-badge-student">
+                  ⏱️ {{ calculateDuration(request.start_time, request.end_time) }}
+                </div>
+              </span>
+              
+              <div v-else class="edit-inputs-row" style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 8px;">
+                <label class="edit-label">Date</label>
+                <input v-model="editData.date" type="date" class="resched-input">
+                <div style="display: flex; gap: 10px;">
+                  <div>
+                    <label class="edit-label">Start</label>
+                    <input v-model="editData.start_time" type="time" class="resched-input">
+                  </div>
+                  <div>
+                    <label class="edit-label">End</label>
+                    <input v-model="editData.end_time" type="time" class="resched-input">
+                  </div>
+                </div>
+              </div>
             </div>
+            <p class="session-topic" v-if="request.topic">Topic: {{ request.topic }}</p>
+          </div>
 
-            <div class="card-footer">
-    <div class="action-row">
-        <template v-if="currentTab === 'upcoming'">
-            <template v-if="editingMeetingId !== request.id">
-                <button @click="startEdit(request)" class="btn-text">Reschedule</button>
-                <button @click="cancelMeeting(request.id)" class="btn-text danger">Cancel</button>
-            </template>
-            <template v-else>
-                <button @click="saveReschedule(request.id)" class="btn-text success">Save</button>
-                <button @click="editingMeetingId = null" class="btn-text">Back</button>
-            </template>
-        </template>
-
-        <template v-else>
-            <button 
-                v-if="request.status === 'approved'" 
-                @click="toggleReviewForm(request.id)"
-                class="btn-text success"
-            >
-                {{ activeReviewMeetingId === request.id ? 'Close' : 'Leave Review' }}
-            </button>
-        </template>
-    </div>
-    
-    <span class="status-pill-minimal" :class="request.status">
-        {{ request.status.toUpperCase() }}
-    </span>
-</div>
-
-<div v-if="activeReviewMeetingId === request.id" class="review-section">
-    <ReviewForm 
-        :meeting-id="request.id"
-        :mentor-id="request.mentor_profile_id"
-        @review-submitted="() => { activeReviewMeetingId = null; fetchSentRequests(); }"
-    />
-</div>
-            
-            <div v-if="currentTab === 'upcoming' && request.status === 'approved' && request.meeting_link" class="link-bar">
-                <a :href="request.meeting_link" target="_blank" class="join-pill">🎥 Join Jitsi</a>
-                <button @click="addToGoogleCalendar(request)" class="sync-pill">🗓️ Sync</button>
+          <div class="card-footer">
+            <div class="action-row">
+              <template v-if="currentTab === 'upcoming'">
+                <template v-if="editingMeetingId !== request.id">
+                  <button @click="startEdit(request)" class="btn-text">Reschedule</button>
+                  <button @click="cancelMeeting(request.id)" class="btn-text danger">Cancel</button>
+                </template>
+                <template v-else>
+                  <button @click="saveReschedule(request.id)" class="btn-text success">Save</button>
+                  <button @click="editingMeetingId = null" class="btn-text">Back</button>
+                </template>
+              </template>
+              <template v-else>
+                <button v-if="request.status === 'approved'" @click="toggleReviewForm(request.id)" class="btn-text success">
+                  {{ activeReviewMeetingId === request.id ? 'Close' : 'Leave Review' }}
+                </button>
+              </template>
             </div>
+            <span class="status-pill-minimal" :class="request.status">{{ request.status.toUpperCase() }}</span>
+          </div>
+
+          <div v-if="activeReviewMeetingId === request.id" class="review-section">
+            <ReviewForm 
+    :meeting-id="request.id"
+    :mentor-id="request.mentor_profile_id" 
+    @review-submitted="() => { activeReviewMeetingId = null; fetchSentRequests(); }" 
+/>
+          </div>
+          
+          <div v-if="currentTab === 'upcoming' && request.status === 'approved' && request.meeting_link" class="link-bar">
+            <a :href="request.meeting_link" target="_blank" class="join-pill">🎥 Join Jitsi</a>
+            <button @click="addToGoogleCalendar(request)" class="sync-pill">🗓️ Sync</button>
+          </div>
         </div>
+      </div>
     </div>
-</div>
 
     <main class="main-content">
       <header class="dashboard-header">
@@ -369,30 +393,26 @@ onMounted(() => {
         </div>
 
         <div v-if="mentorsLoading" class="loading-state">Finding mentors...</div>
-
         <div v-else class="mentor-grid">
-    <div v-for="mentor in filteredMentors" :key="mentor.id" class="mentor-card">
-        
-        <div class="mentor-avatar">
-            <img :src="mentor.profile_photo_path ? `http://localhost:8000/storage/${mentor.profile_photo_path}` : 'https://via.placeholder.com/100'">
-            <span class="verify-tag">Verified ✅</span>
-        </div>
-
-        <div class="mentor-info">
-            <h3>{{ mentor.user?.name }}</h3>
-            
-            <div class="rating-bar" v-if="mentor.rating_avg > 0">
+          <div v-for="mentor in filteredMentors" :key="mentor.id" class="mentor-card">
+            <div class="mentor-avatar">
+              <img :src="mentor.profile_photo_path ? `http://localhost:8000/storage/${mentor.profile_photo_path}` : 'https://via.placeholder.com/100'">
+              <span class="verify-tag">Verified ✅</span>
+            </div>
+            <div class="mentor-info">
+              <h3>{{ mentor.user?.name }}</h3>
+              <div class="rating-bar" v-if="mentor.rating_avg > 0">
                 <span class="star-icon">★</span>
                 <span class="rating-num">{{ Number(mentor.rating_avg).toFixed(1) }}</span>
                 <span class="review-qty">({{ mentor.reviews_count || 0 }} reviews)</span>
+              </div>
+              <div v-else class="no-rating-pill">No reviews yet...</div>
+              <p class="uni-name">{{ mentor.university?.name || mentor.target_university || 'University not set' }}</p>
+              <p class="expertise">{{ mentor.subject_expertise }}</p>
+              <button @click="router.push(`/mentor/profile/${mentor.id}`)" class="connect-btn">View Profile</button>
             </div>
-            <div v-else class="no-rating-pill">No reviews yet...</div>
-
-            <p class="expertise">{{ mentor.subject_expertise }}</p>
-            <button @click="router.push(`/mentor/profile/${mentor.id}`)" class="connect-btn">View Profile</button>
+          </div>
         </div>
-    </div>
-</div>
       </div>
     </main>
   </div>
@@ -587,5 +607,48 @@ input {
 @media (max-width: 1024px) {
   .dashboard-container { flex-direction: column; padding: 1rem; }
   .sidebar { flex: 1; width: 100%; position: static; }
+}
+
+.uni-name {
+    font-size: 0.9rem;
+    color: #6b7280; 
+    margin: 0.2rem 0;
+    font-weight: 500;
+}
+
+.expertise {
+    margin-top: 0.1rem;
+}
+
+.edit-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #6b7280;
+    margin-bottom: 2px;
+}
+
+.resched-input {
+    border: 1px solid #DEE4FE;
+    padding: 6px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    width: 100%;
+}
+
+.duration-badge-student {
+    display: inline-block;
+    background: #DEE4FE; 
+    color: #3e55f8;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-top: 4px;
+    border: 1px solid #3e55f8;
+}
+
+.date-display {
+    line-height: 1.4;
 }
 </style>

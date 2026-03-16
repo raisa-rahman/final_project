@@ -15,11 +15,16 @@ return new class extends Migration
         Schema::create('mentor_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('university_id')->constrained();
+            $table->foreignId('university_id')->nullable()->constrained();
             $table->string('subject_expertise');
             $table->text('bio')->nullable();
             $table->boolean('is_verified')->default(false);
             $table->timestamps();
+            $table->string('target_country')->nullable();
+            $table->string('current_university_year')->nullable();
+            $table->decimal('rating_avg', 3, 1)->default(0);
+            $table->string('profile_photo_path')->nullable();
+            $table->string('document_path')->nullable();
         });
     }
 

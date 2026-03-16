@@ -27,6 +27,8 @@ const uploadFile = async () => {
         await axios.post(`http://localhost:8000/api/mentors/${props.profileId}/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
+        
+        alert(`${props.uploadType === 'photo' ? 'Profile picture' : 'Verification document'} uploaded successfully!`); 
         emit('upload-success');
         selectedFile.value = null; 
     } catch (err) {

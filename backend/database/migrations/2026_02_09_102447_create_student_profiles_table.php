@@ -17,6 +17,8 @@ public function up(): void
         $table->string('university_name')->nullable();
         $table->string('course_of_study')->nullable();
         $table->string('current_year')->nullable();
+        $table->string('target_university')->nullable();
+        $table->string('target_country')->nullable(); 
         $table->string('profile_photo_path')->nullable();
         $table->text('bio')->nullable();
         $table->timestamps();
