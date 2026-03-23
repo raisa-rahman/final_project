@@ -47,19 +47,6 @@ const profile = ref({
     target_country: ''
 });
 
-const filteredMentors = computed(() => {
-    return mentors.value.filter(mentor => {
-        const matchesSubject = !searchQuery.value.subject || 
-            mentor.subject_expertise?.toLowerCase().includes(searchQuery.value.subject.toLowerCase());
-            
-        const matchesUniversity = !searchQuery.value.university || 
-            mentor.university?.name?.toLowerCase().includes(searchQuery.value.university.toLowerCase()) || 
-            mentor.target_university?.toLowerCase().includes(searchQuery.value.university.toLowerCase());
-
-        return matchesSubject && matchesUniversity;
-    });
-});
-
 const fetchMentors = async () => {
     try {
         const response = await axios.get('http://localhost:8000/api/mentors/directory');
@@ -266,6 +253,38 @@ const calculateDuration = (start, end) => {
         : `${mins} min`;
 };
 
+const selectedUniversities = ref([]);
+
+const universityOptions = computed(() => {
+  const unis = mentors.value.map(m => m.university?.name || m.target_university).filter(Boolean);
+  return [...new Set(unis)].sort();
+});
+
+const filteredMentors = computed(() => {
+  return mentors.value.filter(mentor => {
+    const mentorUni = mentor.university?.name || mentor.target_university || '';
+    
+    const matchesSubject = !searchQuery.value.subject || 
+        mentor.subject_expertise?.toLowerCase().includes(searchQuery.value.subject.toLowerCase());
+        
+    const matchesUniversity = selectedUniversities.value.length === 0 || 
+        selectedUniversities.value.includes(mentorUni);
+
+    return matchesSubject && matchesUniversity;
+  });
+});
+
+const toggleUniversity = (uni) => {
+    const index = selectedUniversities.value.indexOf(uni);
+    if (index > -1) {
+        selectedUniversities.value.splice(index, 1);
+    } else {
+        selectedUniversities.value.push(uni);
+    }
+};
+
+const isUniSelected = (uni) => selectedUniversities.value.includes(uni);
+
 onMounted(() => {
     fetchProfile();
     fetchMentors();
@@ -277,21 +296,6 @@ onMounted(() => {
 
 <template>
   <div class="dashboard-container">
-    <aside class="sidebar">
-      <div class="profile-card">
-        <h2>Educational Goals</h2>
-        <div class="form-group">
-          <label>University</label>
-          <input v-model="profile.target_university" type="text">
-        </div>
-        <div class="form-group">
-          <label>Country</label>
-          <input v-model="profile.target_country" type="text">
-        </div>
-        <button @click="updateProfile" :disabled="loading" class="save-btn small">Update</button>
-      </div>
-    </aside>
-
     <div class="booking-tracker-section">
       <div class="section-header">
         <h2>Your Meetings</h2>
@@ -385,10 +389,34 @@ onMounted(() => {
 
       <div class="directory-section">
         <div class="section-header">
-          <h2>Verified Mentors</h2>
+          <h2>Verified Mentors ({{ filteredMentors.length }})</h2>
           <div class="search-filters">
-            <input v-model="searchQuery.subject" placeholder="Filter by Expertise..." class="search-input">
-            <input v-model="searchQuery.university" placeholder="Filter by University..." class="search-input">
+            <div class="filter-group">
+              <label class="filter-label">Expertise</label>
+              <div class="search-wrapper">
+                <span class="search-icon">🔍</span>
+                <input v-model="searchQuery.subject" placeholder="e.g. Computer Science, Finance..." class="search-input">
+                <button v-if="searchQuery.subject" @click="searchQuery.subject = ''" class="clear-input">×</button>
+              </div>
+            </div>
+
+            <div class="filter-group">
+              <div class="filter-header">
+                <label class="filter-label">Filter by University</label>
+                <button v-if="selectedUniversities.length" @click="selectedUniversities = []" class="clear-link">Clear All</button>
+              </div>
+              <div class="uni-pill-container">
+                <button 
+                  v-for="uni in universityOptions" 
+                  :key="uni" 
+                  @click="toggleUniversity(uni)"
+                  :class="['uni-pill', { active: isUniSelected(uni) }]"
+                >
+                  {{ uni }}
+                  <span v-if="isUniSelected(uni)" class="pill-check">✓</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -413,10 +441,10 @@ onMounted(() => {
             </div>
           </div>
         </div>
-      </div>
-    </main>
-  </div>
-</template>
+      </div> 
+      </main> 
+      </div> 
+      </template>
 
 <style scoped>
 .dashboard-container {
@@ -650,5 +678,41 @@ input {
 
 .date-display {
     line-height: 1.4;
+}
+
+.multi-select-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.multi-select {
+    height: 80px; 
+    padding: 5px !important;
+    background-color: white;
+}
+
+.filter-hint {
+    font-size: 0.7rem;
+    color: #6b7280;
+    margin-top: 4px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.clear-link {
+    background: none;
+    border: none;
+    color: #3e55f8;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.7rem;
+    padding: 0;
+}
+
+.search-filters {
+    display: flex;
+    flex-direction: column; 
+    gap: 1rem;
 }
 </style>
