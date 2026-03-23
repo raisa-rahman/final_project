@@ -7,6 +7,14 @@ use App\Models\MentorProfile;
 
 class MentorProfileController extends Controller
 {
+    public function getProfile($id)
+{
+    $mentor = MentorProfile::with(['user', 'university', 'reviews'])
+        ->withCount('reviews') 
+        ->findOrFail($id);
+
+    return response()->json($mentor);
+}
     public function update(Request $request) {
         $request->validate([
             'subject_expertise' => 'required|string|max:255',

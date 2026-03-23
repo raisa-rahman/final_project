@@ -64,14 +64,17 @@ onMounted(fetchMentorDetails);
         <div class="info-section">
     <h1>{{ mentor.user?.name }}</h1>
     
-    <div class="profile-rating-badge" v-if="mentor.rating_avg && Number(mentor.rating_avg) > 0">
+    <div class="profile-rating-badge" v-if="mentor.reviews && mentor.reviews.length > 0">
         <span class="stars">★ ★ ★ ★ ★</span>
         <span class="rating-text">
-            {{ Number(mentor.rating_avg).toFixed(1) }} 
-            ({{ mentor.reviews_count || 0 }} reviews)
+            {{ Number(mentor.rating_avg || 0).toFixed(1) }} 
+            ({{ mentor.reviews.length }} {{ mentor.reviews.length === 1 ? 'review' : 'reviews' }})
         </span>
     </div>
-    <div v-else class="no-rating-badge">no reviews yet</div>
+    
+    <div v-else class="no-rating-badge" style="color: #6b7280; font-style: italic; margin: 0.5rem 0;">
+        No reviews yet
+    </div>
 
     <p class="expertise-tag">{{ mentor.subject_expertise }}</p>
     <p class="uni-name">{{ mentor.university?.name || mentor.target_university }}</p>
