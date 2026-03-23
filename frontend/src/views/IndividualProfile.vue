@@ -101,7 +101,7 @@ onMounted(fetchMentorDetails);
       <div v-if="showBookingModal" class="modal-overlay" @click.self="showBookingModal = false">
         <div class="booking-modal">
           <h2>Request a Mentorship Session</h2>
-          <p class="subtitle">Suggest a time for Dr. {{ mentor.user?.name }} to review.</p>
+          <p class="subtitle">Suggest a time for {{ mentor.user?.name }} to review.</p>
           
           <div class="form-group">
             <label>Preferred Date</label>
