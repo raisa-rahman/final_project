@@ -2,8 +2,12 @@
 import { computed } from 'vue';
 import { useRoute, RouterLink, RouterView } from 'vue-router';
 
-const route = useRoute();
+import fbLogo from '@/assets/fb.png';
+import xLogo from '@/assets/x.png';
+import inLogo from '@/assets/in.png';
+import igLogo from '@/assets/ig.jpg';
 
+const route = useRoute();
 
 </script>
 
@@ -51,21 +55,31 @@ const route = useRoute();
         </div>
 
         <div class="footer-section">
-          <h3>Portals</h3>
-          <ul class="footer-links">
+          <h3>Support & Portals</h3> <ul class="footer-links">
             <li><a href="http://localhost:5173/student/login">Student Login</a></li>
             <li><a href="http://localhost:5173/mentor/login">Mentor Login</a></li>
             <li><RouterLink to="/staff-portal">Staff Portal</RouterLink></li>
+            <li class="contact-highlight">
+              <a href="https://studentcircus.com/contact-us" target="_blank">Contact Us</a>
+            </li>
           </ul>
         </div>
 
         <div class="footer-section">
           <h3>Follow Us</h3>
           <div class="social-icons">
-            <a href="https://www.facebook.com/studentcircus/" target="_blank" aria-label="Facebook">FB</a>
-            <a href="http://x.com/studentcircus" target="_blank" aria-label="X">X</a>
-            <a href="https://www.linkedin.com/company/student-circus/" target="_blank" aria-label="LinkedIn">LI</a>
-            <a href="https://www.instagram.com/studentcircus/?hl=en" target="_blank" aria-label="Instagram">IG</a>
+            <a href="https://www.facebook.com/studentcircus/" target="_blank" aria-label="Facebook">
+              <img :src="fbLogo" alt="Facebook" class="social-img" />
+            </a>
+            <a href="http://x.com/studentcircus" target="_blank" aria-label="X">
+              <img :src="xLogo" alt="X" class="social-img" />
+            </a>
+            <a href="https://www.linkedin.com/company/student-circus/" target="_blank" aria-label="LinkedIn">
+              <img :src="inLogo" alt="LinkedIn" class="social-img" />
+            </a>
+            <a href="https://www.instagram.com/studentcircus/?hl=en" target="_blank" aria-label="Instagram">
+              <img :src="igLogo" alt="Instagram" class="social-img" />
+            </a>
           </div>
         </div>
       </div>
@@ -457,5 +471,44 @@ main {
   .footer-content {
     grid-template-columns: 1fr;
   }
+}
+
+.social-icons a {
+  width: 40px; 
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  text-decoration: none;
+  overflow: hidden; 
+  transition: transform 0.2s, background 0.2s;
+}
+
+.social-icons a:hover {
+  background: #3e55f8;
+  transform: translateY(-3px);
+}
+
+.social-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; 
+}
+
+.contact-highlight a {
+  color: #2de1aa !important; 
+  font-weight: 700;
+}
+
+.contact-highlight a:hover {
+  color: #ffffff !important;
+  text-decoration: underline;
+}
+
+.footer-links li {
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
 }
 </style>
