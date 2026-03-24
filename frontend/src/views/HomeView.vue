@@ -267,12 +267,23 @@ onMounted(async () => {
 }
 
 .video-container {
-  width: auto;
+  width: 100%;
   max-width: 650px;
   margin: 0 auto 3rem;
   aspect-ratio: 16 / 9;
   border-radius: 24px;
   overflow: hidden;
   box-shadow: 0 20px 50px rgba(26, 31, 60, 0.2);
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero-video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: none;
 }
 </style>
