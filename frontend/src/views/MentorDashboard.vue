@@ -178,6 +178,10 @@ const calculateDuration = (start, end) => {
         : `${mins} min`;
 };
 
+const handlePhotoSuccess = () => {
+    fetchData();
+    alert("Profile photo updated!");
+};
 
 onMounted(fetchData);
 </script>
@@ -210,6 +214,21 @@ onMounted(fetchData);
         </div>
 
         <div v-if="isEditingProfile" class="edit-form">
+        <div class="form-group photo-edit-section">
+    <label>Profile Photo</label>
+    <div class="edit-photo-preview">
+        <img v-if="mentorProfile.profile_photo_path" 
+             :src="`http://localhost:8000/storage/${mentorProfile.profile_photo_path}`" 
+             class="mentor-dashboard-img small">
+        <div v-else class="photo-placeholder small">{{ user?.name?.charAt(0) }}</div>
+        
+        <FileUpload 
+            uploadType="photo" 
+            :profileId="mentorProfile.id" 
+            @upload-success="handlePhotoSuccess" 
+        />
+    </div>
+</div>
           <div class="form-group">
             <label>Subject Expertise</label>
             <input v-model="profileForm.subject_expertise" class="resched-input">
@@ -425,5 +444,26 @@ onMounted(fetchData);
 .meeting-info span {
     line-height: 1.5;
     display: block;
+}
+
+.photo-edit-section {
+    background: #f8faff;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px dashed #3e55f8;
+    margin-bottom: 1.5rem;
+}
+
+.edit-photo-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.mentor-dashboard-img.small, .photo-placeholder.small {
+    width: 60px;
+    height: 60px;
+    font-size: 1.2rem;
 }
 </style>
