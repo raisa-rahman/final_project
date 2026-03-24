@@ -58,12 +58,30 @@ onMounted(async () => {
         </div>
 
         <div class="trust-section">
-          <p class="trust-label">PARTNERING WITH TOP INSTITUTIONS</p>
-          <div class="logo-grid">
-            <img src="@/assets/kcl.png" alt="Kings College London" class="trust-logo" />
-            <img src="@/assets/city.png" alt="City University of London" class="trust-logo" />
-          </div>
-        </div>
+  <p class="trust-label">PARTNERING WITH TOP INSTITUTIONS</p>
+  <div class="logo-marquee-container">
+    <div class="logo-marquee-scroll">
+      <div class="logo-grid">
+        <img src="@/assets/kcl.png" alt="Kings College London" class="trust-logo" />
+        <img src="@/assets/city.png" alt="City University of London" class="trust-logo" />
+        <img src="@/assets/nott.png" alt="University of Nottingham" class="trust-logo" />
+        <img src="@/assets/arden.png" alt="Arden University" class="trust-logo" />
+        <img src="@/assets/hert.jpg" alt="University of Hertfordshire" class="trust-logo" />
+        <img src="@/assets/bourne.png" alt="Bournemouth University" class="trust-logo" />
+        <img src="@/assets/lse.png" alt="London School of Economics" class="trust-logo" />
+      </div>
+      <div class="logo-grid" aria-hidden="true">
+        <img src="@/assets/kcl.png" alt="Kings College London" class="trust-logo" />
+        <img src="@/assets/city.png" alt="City University of London" class="trust-logo" />
+        <img src="@/assets/nott.png" alt="University of Nottingham" class="trust-logo" />
+        <img src="@/assets/arden.png" alt="Arden University" class="trust-logo" />
+        <img src="@/assets/hert.jpg" alt="University of Hertfordshire" class="trust-logo" />
+        <img src="@/assets/bourne.png" alt="Bournemouth University" class="trust-logo" />
+        <img src="@/assets/lse.png" alt="London School of Economics" class="trust-logo" />
+      </div>
+    </div>
+  </div>
+</div>
 
         <div class="cta-container">
           <h3 class="subhead-small">Ready to Unlock Your Global Career Potential?</h3>
@@ -82,7 +100,7 @@ onMounted(async () => {
           <div class="qa-grid">
             <div class="qa-item">
               <h3>"How do I know these mentors actually know about Tier 2 visas?"</h3>
-              <p>Every mentor is manually verified. We prioritize professionals who were once international students themselves. You're getting a roadmap for the UK job market.</p>
+              <p>Every mentor is manually verified. We prioritise professionals who were once international students themselves. You're getting a roadmap for the UK job market.</p>
             </div>
 
             <div class="qa-item">
@@ -128,6 +146,73 @@ onMounted(async () => {
 
 <style scoped>
 
+.cta-container {
+  padding: 5rem 2rem;
+  background: linear-gradient(135deg, #fbfcff 0%, #f0f4ff 100%);
+  border-radius: 24px;
+  margin: 4rem auto;
+  max-width: 800px;
+  text-align: center;
+  border: 1px solid #dee4fe;
+  box-shadow: 0 10px 30px rgba(26, 31, 60, 0.03);
+}
+
+.subhead-small {
+  font-family: 'Red Hat Display', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1a1f3c;
+  margin-bottom: 2.5rem;
+  line-height: 1.2;
+}
+
+.btn-primary {
+  background-color: #3e55f8;
+  color: white;
+  padding: 1.2rem 3.5rem;
+  border-radius: 50px;
+  font-family: 'Red Hat Display', sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 12px 24px rgba(62, 85, 248, 0.25);
+  margin-bottom: 2rem;
+}
+
+/* Hover effects act as signifiers of interactivity [cite: 5966] */
+.btn-primary:hover {
+  transform: translateY(-4px);
+  background-color: #1a1f3c;
+  box-shadow: 0 15px 30px rgba(26, 31, 60, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(-1px);
+}
+
+.cta-subtext {
+  font-family: 'SF-UI Text', sans-serif;
+  font-size: 1rem;
+  color: #6b7280;
+  margin-top: 1rem;
+}
+
+.cta-link {
+  color: #2de1aa; /* Using your verified brand green */
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  margin-left: 0.5rem;
+}
+
+.cta-link:hover {
+  border-bottom-color: #2de1aa;
+  color: #065f46;
+}
+
 .page-wrapper {
   padding-top: 80px; 
   background-color: #fbfcff;
@@ -161,8 +246,7 @@ onMounted(async () => {
 
 .hero-section, 
 .conversation-section, 
-.team-showcase,
-.trust-section {
+.team-showcase{
   width: 100%;
   max-width: 1100px;
   padding: 4rem 20px;
@@ -189,28 +273,65 @@ onMounted(async () => {
 
 .trust-section {
   background: #f8faff;
-  border-radius: 20px;
+  padding: 3rem 0;
   margin-bottom: 4rem;
+  width: 100vw; 
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  overflow: hidden;
+}
+
+.trust-label {
+  text-align: center;
+  margin-bottom: 2rem;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+.logo-marquee-container {
+  display: flex;
+  overflow: hidden;
+  user-select: none;
+}
+
+.logo-marquee-scroll {
+  display: flex;
+  flex-shrink: 0;
+  min-width: 100%;
+  gap: 4rem;
+  animation: scroll-left 30s linear infinite; 
+}
+
+.logo-marquee-container:hover .logo-marquee-scroll {
+  animation-play-state: paused;
 }
 
 .logo-grid {
   display: flex;
-  justify-content: center;
+  justify-content: space-around;
   align-items: center;
+  min-width: 100%;
   gap: 4rem;
-  flex-wrap: wrap;
 }
 
 .trust-logo {
-  height: 60px; 
-  filter: grayscale(100%);
-  opacity: 0.6;
-  transition: all 0.3s ease;
+  height: 80px;
+  width: auto;
+  opacity: 1;
+  transition: all 0.2s ease;
+  object-fit: contain;
 }
 
-.trust-logo:hover {
-  filter: grayscale(0%);
-  opacity: 1;
+@keyframes scroll-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
 }
 
 .conversation-section {
@@ -230,13 +351,12 @@ onMounted(async () => {
 
 .mentor-scroll-wrapper {
   width: 100%;
-  overflow-x: auto; /* Enable horizontal scroll */
+  overflow-x: auto; 
   padding: 2rem 0;
-  scrollbar-width: thin; /* Firefox */
+  scrollbar-width: thin; 
   scrollbar-color: #3e55f8 #f0f3ff;
 }
 
-/* Custom scrollbar for Chrome/Safari */
 .mentor-scroll-wrapper::-webkit-scrollbar {
   height: 8px;
 }
@@ -250,12 +370,10 @@ onMounted(async () => {
 }
 
 .mentor-faces-grid-horizontal {
-  display: flex; /* Flex instead of Grid for linear scrolling */
+  display: flex; 
   gap: 2rem;
   padding: 0 1rem;
-  /* Ensure it doesn't wrap to new lines */
   flex-wrap: nowrap; 
-  /* Center if items are few, start if many */
   justify-content: v-bind("featuredMentors.length > 3 ? 'flex-start' : 'center'");
 }
 
@@ -265,7 +383,6 @@ onMounted(async () => {
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(26, 31, 60, 0.05);
   border: 1px solid #f0f3ff;
-  /* Fixed width is crucial for horizontal scrolling */
   flex: 0 0 280px; 
   transition: transform 0.3s ease;
 }
