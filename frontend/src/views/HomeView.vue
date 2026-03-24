@@ -19,12 +19,14 @@ const featuredMentors = ref<Mentor[]>([]);
 
 onMounted(async () => {
   try {
-    const response = await axios.get('/api/mentors/directory');
-    featuredMentors.value = response.data.slice(0, 3); 
+    const response = await axios.get('http://localhost:8000/api/mentors/directory');
+    const rawData = Array.isArray(response.data) ? response.data : (response.data.mentors || []);
+    featuredMentors.value = rawData.filter((m: any) => Number(m.is_verified) === 1);
   } catch (error) {
     console.error("Failed to load mentor faces:", error);
   }
 });
+
 </script>
 
 <template>
@@ -101,16 +103,18 @@ onMounted(async () => {
           <h2 class="subhead">Guidance from Real Professionals</h2>
           <p class="section-intro">Our community is built by people who have walked in your shoes.</p>
           
-          <div class="mentor-faces-grid">
-            <div v-for="mentor in featuredMentors" :key="mentor.id" class="mentor-card-simple">
-              <div class="face-container">
-                <img :src="`http://localhost:8000/storage/${mentor.profile_photo_path}`" 
-                     :alt="mentor.user.name" class="mentor-face" />
-              </div>
-              <div class="mentor-info">
-                <h4>{{ mentor.user.name }}</h4>
-                <p class="mentor-title">{{ mentor.subject_expertise }}</p>
-                <p class="mentor-tenure">{{ mentor.university }}</p>
+          <div class="mentor-scroll-wrapper">
+            <div class="mentor-faces-grid-horizontal">
+              <div v-for="mentor in featuredMentors" :key="mentor.id" class="mentor-card-simple">
+                <div class="face-container">
+                  <img :src="mentor.profile_photo_path ? `http://localhost:8000/storage/${mentor.profile_photo_path}` : 'https://via.placeholder.com/150'" 
+                      :alt="mentor.user?.name" class="mentor-face" />
+                </div>
+                <div class="mentor-info">
+                  <h4>{{ mentor.user?.name }}</h4>
+                  <p class="mentor-title">{{ mentor.subject_expertise }}</p>
+                  <p class="mentor-tenure">{{ mentor.university?.name || mentor.university || 'Verified Mentor' }}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -224,11 +228,65 @@ onMounted(async () => {
   text-align: left;
 }
 
-.mentor-faces-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 3rem;
-  margin-top: 3rem;
+.mentor-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto; /* Enable horizontal scroll */
+  padding: 2rem 0;
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: #3e55f8 #f0f3ff;
+}
+
+/* Custom scrollbar for Chrome/Safari */
+.mentor-scroll-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+.mentor-scroll-wrapper::-webkit-scrollbar-track {
+  background: #f0f3ff;
+  border-radius: 10px;
+}
+.mentor-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: #3e55f8;
+  border-radius: 10px;
+}
+
+.mentor-faces-grid-horizontal {
+  display: flex; /* Flex instead of Grid for linear scrolling */
+  gap: 2rem;
+  padding: 0 1rem;
+  /* Ensure it doesn't wrap to new lines */
+  flex-wrap: nowrap; 
+  /* Center if items are few, start if many */
+  justify-content: v-bind("featuredMentors.length > 3 ? 'flex-start' : 'center'");
+}
+
+.mentor-card-simple {
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(26, 31, 60, 0.05);
+  border: 1px solid #f0f3ff;
+  /* Fixed width is crucial for horizontal scrolling */
+  flex: 0 0 280px; 
+  transition: transform 0.3s ease;
+}
+
+.mentor-card-simple:hover {
+  transform: translateY(-10px);
+}
+
+.mentor-face {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mentor-tenure {
+  font-size: 0.85rem;
+  color: #6b7280;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .mentor-card-simple {
