@@ -13,6 +13,9 @@ Route::post('/reviews', [\App\Http\Controllers\ReviewController::class, 'store']
 Route::get('/api/universities', fn () => \App\Models\University::all());
 Route::get('/universities', fn () => \App\Models\University::all());
 Route::get('/mentors/directory', [DirectoryController::class, 'index']);
+Route::get('/universities', function() {
+    return App\Models\University::all();
+});
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reviews', [ReviewController::class, 'store']);

@@ -86,11 +86,6 @@ const route = useRoute();
 
       <div class="footer-bottom">
         <p>&copy; 2026 Student Circus. All rights reserved.</p>
-        <div class="legal-links">
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms of Service</a>
-          <a href="#">Sitemap</a>
-        </div>
       </div>
     </footer>
   </div>

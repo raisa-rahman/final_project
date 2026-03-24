@@ -256,8 +256,7 @@ const calculateDuration = (start, end) => {
 const selectedUniversities = ref([]);
 
 const universityOptions = computed(() => {
-  const unis = mentors.value.map(m => m.university?.name || m.target_university).filter(Boolean);
-  return [...new Set(unis)].sort();
+    return allUniversities.value.map(u => u.name).sort();
 });
 
 const filteredMentors = computed(() => {
@@ -285,7 +284,22 @@ const toggleUniversity = (uni) => {
 
 const isUniSelected = (uni) => selectedUniversities.value.includes(uni);
 
+const allUniversities = ref([]); 
+
+const fetchUniversities = async () => {
+    try {
+        const response = await axios.get('http://localhost:8000/api/universities');
+        allUniversities.value = response.data;
+    } catch (err) {
+        console.error("Failed to load full university list", err);
+    }
+};
+
+
+
 onMounted(() => {
+    fetchUniversities();
+    fetchMentors();
     fetchProfile();
     fetchMentors();
     fetchFavorites(); 
@@ -394,7 +408,7 @@ onMounted(() => {
             <div class="filter-group">
               <label class="filter-label">Expertise</label>
               <div class="search-wrapper">
-                <span class="search-icon">🔍</span>
+                <span class="search-icon"></span>
                 <input v-model="searchQuery.subject" placeholder="e.g. Computer Science, Finance..." class="search-input">
                 <button v-if="searchQuery.subject" @click="searchQuery.subject = ''" class="clear-input">×</button>
               </div>
@@ -405,16 +419,20 @@ onMounted(() => {
                 <label class="filter-label">Filter by University</label>
                 <button v-if="selectedUniversities.length" @click="selectedUniversities = []" class="clear-link">Clear All</button>
               </div>
-              <div class="uni-pill-container">
-                <button 
-                  v-for="uni in universityOptions" 
-                  :key="uni" 
-                  @click="toggleUniversity(uni)"
-                  :class="['uni-pill', { active: isUniSelected(uni) }]"
-                >
-                  {{ uni }}
-                  <span v-if="isUniSelected(uni)" class="pill-check">✓</span>
-                </button>
+              
+              <div class="checkbox-container">
+                <label v-for="uni in universityOptions" :key="uni" class="checkbox-item">
+                  <input 
+                    type="checkbox" 
+                    :value="uni" 
+                    v-model="selectedUniversities"
+                    class="hidden-checkbox"
+                  >
+                  <span class="custom-checkbox">
+                    <span class="check-mark">✓</span>
+                  </span>
+                  <span class="checkbox-text">{{ uni }}</span>
+                </label>
               </div>
             </div>
           </div>
@@ -442,11 +460,79 @@ onMounted(() => {
           </div>
         </div>
       </div> 
-      </main> 
-      </div> 
-      </template>
+    </main> 
+  </div> 
+</template>
 
 <style scoped>
+.checkbox-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.hidden-checkbox {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.custom-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #dee4fe; 
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  transition: all 0.2s ease;
+  flex-shrink: 0; 
+}
+
+.hidden-checkbox:checked + .custom-checkbox {
+  background-color: #3e55f8; 
+  border-color: #3e55f8;
+}
+
+.check-mark {
+  color: white;
+  font-size: 14px;
+  display: none;
+  line-height: 1;
+}
+
+.hidden-checkbox:checked + .custom-checkbox .check-mark {
+  display: block;
+}
+
+.checkbox-text {
+  font-family: 'SF-UI Text', sans-serif;
+  font-size: 0.95rem;
+  color: #1a1f3c; 
+  font-weight: 500;
+}
+
+.clear-link {
+  background: none;
+  border: none;
+  color: #3e55f8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
 .dashboard-container {
   display: flex;
   gap: 2rem;
@@ -644,10 +730,6 @@ input {
     font-weight: 500;
 }
 
-.expertise {
-    margin-top: 0.1rem;
-}
-
 .edit-label {
     display: block;
     font-size: 0.75rem;
@@ -714,5 +796,68 @@ input {
     display: flex;
     flex-direction: column; 
     gap: 1rem;
+}
+
+.checkbox-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  max-height: 200px; 
+  overflow-y: auto; 
+  padding-right: 5px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: opacity 0.2s;
+}
+
+.checkbox-item:hover {
+  opacity: 0.8;
+}
+
+.hidden-checkbox {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.custom-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #dee4fe;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  transition: all 0.2s ease;
+}
+
+.hidden-checkbox:checked + .custom-checkbox {
+  background-color: #3e55f8; 
+  border-color: #3e55f8;
+}
+
+.check-mark {
+  color: white;
+  font-size: 14px;
+  display: none;
+}
+
+.hidden-checkbox:checked + .custom-checkbox .check-mark {
+  display: block;
+}
+
+.checkbox-text {
+  font-family: 'SF-UI Text', sans-serif;
+  font-size: 0.9rem;
+  color: #1a1f3c;
+  font-weight: 500;
 }
 </style>
