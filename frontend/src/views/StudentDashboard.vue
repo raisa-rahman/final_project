@@ -187,26 +187,6 @@ const format12Hour = (timeStr) => {
     return `${h12}:${minutes}${suffix}`;
 };
 
-const startEdit = (meeting) => {
-    editingMeetingId.value = meeting.id;
-    editData.value = { 
-        date: meeting.date, 
-        start_time: meeting.start_time.substring(0, 5),
-        end_time: meeting.end_time ? meeting.end_time.substring(0, 5) : '' 
-    };
-};
-
-const saveReschedule = async (id) => {
-    try {
-        await axios.post(`http://localhost:8000/api/meetings/${id}/reschedule`, editData.value);
-        editingMeetingId.value = null;
-        fetchSentRequests();
-        alert("Reschedule request sent for approval.");
-    } catch (err) {
-        alert("Error saving: Ensure the date is today or later.");
-    }
-};
-
 const currentTab = ref('upcoming'); 
 
 const categorizedMeetings = computed(() => {
@@ -295,7 +275,90 @@ const fetchUniversities = async () => {
     }
 };
 
+const startHour = ref('09');
+const startMinute = ref('00');
+const startPeriod = ref('AM');
+const endHour = ref('10');
+const endMinute = ref('00');
+const endPeriod = ref('AM');
 
+const pad = (n) => n.toString().padStart(2, '0');
+
+const allowedHours = computed(() => {
+    const hours = [];
+    for (let h = 8; h <= 11; h++) hours.push({ display: h, value: pad(h), period: 'AM' });
+    hours.push({ display: 12, value: '12', period: 'PM' });
+    for (let h = 1; h <= 6; h++) hours.push({ display: h, value: pad(h + 12), period: 'PM' });
+    return hours;
+});
+
+const currentRescheduleDuration = computed(() => {
+    if (!editData.value.start_time || !editData.value.end_time) return 0;
+    const [sH, sM] = editData.value.start_time.split(':').map(Number);
+    const [eH, eM] = editData.value.end_time.split(':').map(Number);
+    const start = new Date(0, 0, 0, sH, sM);
+    const end = new Date(0, 0, 0, eH, eM);
+    const diff = (end - start) / 1000 / 60;
+    return diff > 0 ? diff : 0;
+});
+
+const startEdit = (meeting) => {
+    editingMeetingId.value = meeting.id;
+    editData.value = { 
+        date: meeting.date, 
+        start_time: meeting.start_time.substring(0, 5),
+        end_time: meeting.end_time.substring(0, 5) 
+    };
+
+    const [sH, sM] = editData.value.start_time.split(':').map(Number);
+    startHour.value = sH > 12 ? sH - 12 : (sH === 0 ? 12 : sH);
+    startMinute.value = String(sM).padStart(2, '0');
+    startPeriod.value = sH >= 12 ? 'PM' : 'AM';
+};
+
+const syncRescheduleTimes = () => {
+    const startObj = allowedHours.value.find(h => h.display == startHour.value && h.period == startPeriod.value);
+    const endObj = allowedHours.value.find(h => h.display == endHour.value && h.period == endPeriod.value);
+    
+    if (startObj) {
+        editData.value.start_time = `${startObj.value}:${startMinute.value}`;
+    }
+    if (endObj) {
+        editData.value.end_time = `${endObj.value}:${endMinute.value}`;
+    }
+};
+
+const saveReschedule = async (id) => {
+    syncRescheduleTimes(); 
+
+    const startTotal = parseInt(editData.value.start_time.replace(':', ''));
+    const endTotal = parseInt(editData.value.end_time.replace(':', ''));
+
+    if (endTotal > 1800) {
+        alert("Sessions must end by 6:00 PM. Please adjust your end time.");
+        return;
+    }
+
+    if (endTotal <= startTotal) {
+        alert("End time must be after the start time.");
+        return;
+    }
+
+    const allowedDurations = [15, 30, 45, 60];
+    if (!allowedDurations.includes(currentRescheduleDuration.value)) {
+        alert(`Invalid duration (${currentRescheduleDuration.value} mins). Meetings must be 15, 30, 45, or 60 minutes long.`);
+        return;
+    }
+
+    try {
+        await axios.post(`http://localhost:8000/api/meetings/${id}/reschedule`, editData.value);
+        editingMeetingId.value = null;
+        fetchSentRequests();
+        alert("Reschedule request sent!");
+    } catch (err) {
+        alert(err.response?.data?.message || "Error saving reschedule.");
+    }
+};
 
 onMounted(() => {
     fetchUniversities();
@@ -338,21 +401,53 @@ onMounted(() => {
                 </div>
               </span>
               
-              <div v-else class="edit-inputs-row" style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 8px;">
-                <label class="edit-label">Date</label>
-                <input v-model="editData.date" type="date" class="resched-input">
-                <div style="display: flex; gap: 10px;">
-                  <div>
-                    <label class="edit-label">Start</label>
-                    <input v-model="editData.start_time" type="time" class="resched-input">
-                  </div>
-                  <div>
-                    <label class="edit-label">End</label>
-                    <input v-model="editData.end_time" type="time" class="resched-input">
-                  </div>
-                </div>
-              </div>
+              <div v-else class="edit-inputs-row" style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 12px;">
+    <label class="edit-label">New Date</label>
+    <input v-model="editData.date" type="date" class="resched-input">
+    
+    <div class="time-picker-container" style="display: flex; flex-direction: column; gap: 10px;">
+        <div>
+          <div class="duration-preview" :class="{ 'invalid-text': ![15,30,45,60].includes(currentRescheduleDuration) }">
+    Current Duration: {{ currentRescheduleDuration }} minutes
+    <span v-if="![15,30,45,60].includes(currentRescheduleDuration)">
+        (Must be 15, 30, 45, or 60)
+    </span>
+</div>
+            <label class="edit-label">Start Time (8 AM - 6 PM)</label>
+            <div class="custom-time-picker">
+                <select v-model="startHour" @change="syncRescheduleTimes" class="time-select">
+                    <option v-for="h in allowedHours.filter(h => h.period === startPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
+                </select>
+                <span class="separator">:</span>
+                <select v-model="startMinute" @change="syncRescheduleTimes" class="time-select">
+                    <option v-for="m in ['00', '15', '30', '45']" :value="m">{{ m }}</option>
+                </select>
+                <select v-model="startPeriod" @change="syncRescheduleTimes" class="time-select period">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                </select>
             </div>
+        </div>
+
+        <div>
+            <label class="edit-label">End Time</label>
+            <div class="custom-time-picker">
+                <select v-model="endHour" @change="syncRescheduleTimes" class="time-select">
+                    <option v-for="h in allowedHours.filter(h => h.period === endPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
+                </select>
+                <span class="separator">:</span>
+                <select v-model="endMinute" @change="syncRescheduleTimes" class="time-select">
+                    <option v-for="m in ['00', '15', '30', '45']" :value="m">{{ m }}</option>
+                </select>
+                <select v-model="endPeriod" @change="syncRescheduleTimes" class="time-select period">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
             <p class="session-topic" v-if="request.topic">Topic: {{ request.topic }}</p>
           </div>
 
@@ -859,5 +954,54 @@ input {
   font-size: 0.9rem;
   color: #1a1f3c;
   font-weight: 500;
+}
+
+.custom-time-picker {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #f8faff;
+    padding: 5px;
+    border-radius: 8px;
+    border: 1px solid #DEE4FE;
+    width: fit-content;
+}
+
+.time-select {
+    padding: 6px 8px;
+    border: 1px solid #DEE4FE;
+    border-radius: 4px;
+    background: white;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.period {
+    background: #3e55f8;
+    color: white;
+    font-weight: bold;
+}
+
+.edit-label {
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: #1a1f3c;
+    margin-bottom: 2px;
+    display: block;
+}
+
+.duration-preview {
+    font-size: 0.85rem;
+    padding: 8px;
+    background: #eef2ff;
+    border-radius: 6px;
+    color: #3e55f8;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.invalid-text {
+    background: #fee2e2;
+    color: #ef4444;
 }
 </style>

@@ -1,8 +1,33 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-import FileUpload from '../components/FileUpload.vue'; 
+import FileUpload from '../components/FileUpload.vue';
+
+const startHour = ref('09');
+const startMinute = ref('00');
+const startPeriod = ref('AM');
+const endHour = ref('10');
+const endMinute = ref('00');
+const endPeriod = ref('AM');
+
+const allowedHours = computed(() => {
+    const hours = [];
+    for (let h = 8; h <= 11; h++) hours.push({ display: h, value: pad(h), period: 'AM' });
+    hours.push({ display: 12, value: '12', period: 'PM' });
+    for (let h = 1; h <= 6; h++) hours.push({ display: h, value: pad(h + 12), period: 'PM' });
+    return hours;
+});
+
+const pad = (n) => n.toString().padStart(2, '0');
+
+const syncEditData = () => {
+    const startObj = allowedHours.value.find(h => h.display == startHour.value && h.period == startPeriod.value);
+    if (startObj) editData.value.start_time = `${startObj.value}:${startMinute.value}`;
+
+    const endObj = allowedHours.value.find(h => h.display == endHour.value && h.period == endPeriod.value);
+    if (endObj) editData.value.end_time = `${endObj.value}:${endMinute.value}`;
+};
 
 const router = useRouter();
 const user = ref(JSON.parse(localStorage.getItem('user')));
@@ -140,25 +165,6 @@ const startEdit = (meeting) => {
     };
 };
 
-const saveReschedule = async (id) => {
-    const payload = {
-        date: editData.value.date,
-        start_time: editData.value.start_time.substring(0, 5),
-        end_time: editData.value.end_time.substring(0, 5)
-    };
-
-    try {
-        await axios.post(`http://localhost:8000/api/meetings/${id}/reschedule`, payload);
-        editingMeetingId.value = null;
-        fetchData(); 
-        alert("Reschedule successful! The session status has been reset to pending.");
-    } catch (err) {
-        const errorMsg = err.response?.data?.errors?.end_time?.[0] 
-            || "Error: Ensure the end time is after the start time and the date is today or later.";
-        alert(errorMsg);
-    }
-};
-
 const calculateDuration = (start, end) => {
     if (!start || !end) return '';
     const [sHours, sMin] = start.split(':').map(Number);
@@ -181,6 +187,84 @@ const calculateDuration = (start, end) => {
 const handlePhotoSuccess = () => {
     fetchData();
     alert("Profile photo updated!");
+};
+
+const cancelMeeting = async (meeting) => {
+    const id = meeting.id; 
+    if (!confirm("Are you sure you want to cancel this mentorship session?")) return;
+    
+    try {
+        await axios.post(`http://localhost:8000/api/meetings/${id}/cancel`);
+        await fetchData(); 
+        alert("Session cancelled successfully.");
+    } catch (err) {
+        alert(err.response?.data?.message || "Could not cancel the meeting.");
+    }
+};
+
+const currentRescheduleDuration = computed(() => {
+    const startObj = allowedHours.value.find(h => h.display == startHour.value && h.period == startPeriod.value);
+    const endObj = allowedHours.value.find(h => h.display == endHour.value && h.period == endPeriod.value);
+    
+    if (!startObj || !endObj) return 0;
+
+    const [sH, sM] = [parseInt(startObj.value), parseInt(startMinute.value)];
+    const [eH, eM] = [parseInt(endObj.value), parseInt(endMinute.value)];
+    
+    const startTimeDate = new Date(0, 0, 0, sH, sM);
+    const endTimeDate = new Date(0, 0, 0, eH, eM);
+    
+    const diffMs = endTimeDate - startTimeDate;
+    const diffMins = Math.floor(diffMs / 1000 / 60);
+    
+    return diffMins > 0 ? diffMins : 0;
+});
+
+const saveReschedule = async (id) => {
+    const startObj = allowedHours.value.find(h => h.display == startHour.value && h.period == startPeriod.value);
+    const endObj = allowedHours.value.find(h => h.display == endHour.value && h.period == endPeriod.value);
+
+    if (!startObj || !endObj) {
+        alert("Please select valid start and end times.");
+        return;
+    }
+
+    const startTime24 = `${startObj.value}${startMinute.value}`;
+    const endTime24 = `${endObj.value}${endMinute.value}`;
+
+    if (parseInt(endTime24) > 1800) {
+        alert("The professional window closes at 6:00 PM.");
+        return;
+    }
+
+    const duration = currentRescheduleDuration.value;
+    const allowedDurations = [15, 30, 45, 60];
+
+    if (duration <= 0) {
+        alert("The end time must be later than the start time.");
+        return;
+    }
+
+    if (!allowedDurations.includes(duration)) {
+        alert(`Invalid duration (${duration} mins). Rescheduled meetings must be 15, 30, 45, or 60 minutes long.`);
+        return;
+    }
+
+    const payload = {
+        date: editData.value.date,
+        start_time: `${startObj.value}:${startMinute.value}`,
+        end_time: `${endObj.value}:${endMinute.value}`
+    };
+
+    try {
+        await axios.post(`http://localhost:8000/api/meetings/${id}/reschedule`, payload);
+        editingMeetingId.value = null;
+        fetchData(); 
+        alert("Reschedule successful! Status reset to pending.");
+    } catch (err) {
+        const errorMsg = err.response?.data?.message || "Ensure the date is today or later.";
+        alert(errorMsg);
+    }
 };
 
 onMounted(fetchData);
@@ -288,15 +372,58 @@ onMounted(fetchData);
                 {{ format12Hour(req.start_time) }} – {{ format12Hour(req.end_time) }}
               </div>
               <div v-else class="edit-inputs">
-                <input v-model="editData.date" type="date">
-                <input v-model="editData.start_time" type="time">
-                <input v-model="editData.end_time" type="time">
+                  <label class="edit-label">Date</label>
+                  <input v-model="editData.date" type="date" class="resched-input">
+
+                  <div class="duration-preview" :class="{ 'invalid': ![15,30,45,60].includes(currentRescheduleDuration) }">
+                    Current Duration: {{ currentRescheduleDuration }} minutes
+                    <span v-if="![15,30,45,60].includes(currentRescheduleDuration) && currentRescheduleDuration > 0">
+                        (Must be 15, 30, 45, or 60)
+                    </span>
+                </div>
+                  
+                  <label class="edit-label">Start Time (8 AM - 6 PM)</label>
+                  <div class="custom-time-picker">
+                      <select v-model="startHour" @change="syncEditData" class="time-select">
+                          <option v-for="h in allowedHours.filter(h => h.period === startPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
+                      </select>
+                      <span class="separator">:</span>
+                      <select v-model="startMinute" @change="syncEditData" class="time-select">
+                          <option value="00">00</option>
+                          <option value="15">15</option>
+                          <option value="30">30</option>
+                          <option value="45">45</option>
+                      </select>
+                      <select v-model="startPeriod" @change="syncEditData" class="time-select period">
+                          <option value="AM">AM</option>
+                          <option value="PM">PM</option>
+                      </select>
+                  </div>
+
+                  <label class="edit-label">End Time</label>
+                  <div class="custom-time-picker">
+                      <select v-model="endHour" @change="syncEditData" class="time-select">
+                          <option v-for="h in allowedHours.filter(h => h.period === endPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
+                      </select>
+                      <span class="separator">:</span>
+                      <select v-model="endMinute" @change="syncEditData" class="time-select">
+                          <option value="00">00</option>
+                          <option value="15">15</option>
+                          <option value="30">30</option>
+                          <option value="45">45</option>
+                      </select>
+                      <select v-model="endPeriod" @change="syncEditData" class="time-select period">
+                          <option value="AM">AM</option>
+                          <option value="PM">PM</option>
+                      </select>
+                  </div>
               </div>
             </div>
             <div class="action-row-horizontal">
               <template v-if="editingMeetingId !== req.id">
                 <button @click="handleMeetingAction(req.id, 'approve')" class="btn-text success">Accept</button>
                 <button @click="startEdit(req)" class="btn-text">Reschedule</button>
+                <button @click="cancelMeeting(meeting)" class="btn-text">Cancel</button>
               </template>
               <template v-else>
                 <button @click="saveReschedule(req.id)" class="btn-text success">Save</button>
@@ -324,15 +451,59 @@ onMounted(fetchData);
         </div>
         
         <div v-else class="edit-inputs">
-          <input v-model="editData.date" type="date" class="resched-input">
-          <input v-model="editData.start_time" type="time" class="resched-input">
-          <input v-model="editData.end_time" type="time" class="resched-input">
-        </div>
+                  <label class="edit-label">Date</label>
+                  <input v-model="editData.date" type="date" class="resched-input">
+
+                  <div class="duration-preview" :class="{ 'invalid': ![15,30,45,60].includes(currentRescheduleDuration) }">
+                      Current Duration: {{ currentRescheduleDuration }} minutes
+                      <span v-if="![15,30,45,60].includes(currentRescheduleDuration) && currentRescheduleDuration > 0">
+                          (Must be 15, 30, 45, or 60)
+                      </span>
+                  </div>
+                  
+                  <label class="edit-label">Start Time (8 AM - 6 PM)</label>
+                  <div class="custom-time-picker">
+                      <select v-model="startHour" @change="syncEditData" class="time-select">
+                          <option v-for="h in allowedHours.filter(h => h.period === startPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
+                      </select>
+                      <span class="separator">:</span>
+                      <select v-model="startMinute" @change="syncEditData" class="time-select">
+                          <option value="00">00</option>
+                          <option value="15">15</option>
+                          <option value="30">30</option>
+                          <option value="45">45</option>
+                      </select>
+                      <select v-model="startPeriod" @change="syncEditData" class="time-select period">
+                          <option value="AM">AM</option>
+                          <option value="PM">PM</option>
+                      </select>
+                  </div>
+
+                  <label class="edit-label">End Time</label>
+                  <div class="custom-time-picker">
+                      <select v-model="endHour" @change="syncEditData" class="time-select">
+                          <option v-for="h in allowedHours.filter(h => h.period === endPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
+                      </select>
+                      <span class="separator">:</span>
+                      <select v-model="endMinute" @change="syncEditData" class="time-select">
+                          <option value="00">00</option>
+                          <option value="15">15</option>
+                          <option value="30">30</option>
+                          <option value="45">45</option>
+                      </select>
+                      <select v-model="endPeriod" @change="syncEditData" class="time-select period">
+                          <option value="AM">AM</option>
+                          <option value="PM">PM</option>
+                      </select>
+                  </div>
+              </div>
       </div>
 
       <div class="action-row-horizontal">
         <template v-if="editingMeetingId !== meeting.id">
           <button @click="startEdit(meeting)" class="btn-text">Reschedule</button>
+          <button @click="cancelMeeting(meeting)" class="btn-text">Cancel</button>
+
         </template>
         <template v-else>
           <button @click="saveReschedule(meeting.id)" class="btn-text success">Save</button>
@@ -465,5 +636,71 @@ onMounted(fetchData);
     width: 60px;
     height: 60px;
     font-size: 1.2rem;
+}
+
+.custom-time-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8faff;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid #DEE4FE;
+    width: fit-content;
+    margin-bottom: 1rem;
+}
+
+.time-select {
+    padding: 8px 12px;
+    border: 1px solid #DEE4FE;
+    border-radius: 6px;
+    background: white;
+    font-family: 'SF-UI Text', sans-serif;
+    font-weight: 600;
+    color: #1a1f3c;
+    cursor: pointer;
+    outline: none;
+}
+
+.time-select:focus {
+    border-color: #3e55f8;
+}
+
+.separator {
+    font-weight: 800;
+    color: #1a1f3c;
+}
+
+.period {
+    background: #3e55f8;
+    color: white;
+    border: none;
+}
+
+.edit-label {
+    font-size: 0.8rem;
+    color: #1a1f3c;
+    font-weight: 700;
+    margin-top: 10px;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.duration-preview {
+    font-size: 0.85rem;
+    padding: 10px;
+    background: #eef2ff;
+    border-radius: 8px;
+    color: #3e55f8;
+    font-weight: 700;
+    margin: 10px 0;
+    text-align: center;
+    border: 1px solid #dee4fe;
+}
+
+.duration-preview.invalid {
+    background: #fee2e2;
+    color: #ef4444;
+    border-color: #fecaca;
 }
 </style>
