@@ -1,8 +1,20 @@
 <script setup>
-import { ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import logoUrl from '../assets/logo.png'; 
+import { ref, watch, computed } from 'vue'; 
+
+const passwordRequirements = computed(() => {
+    const p = form.value.password;
+    return [
+        { label: 'At least 8 characters', met: p.length >= 8 },
+        { label: 'Contains a number', met: /\d/.test(p) },
+        { label: 'Contains a special character (@$!%*?)', met: /[!@#$%^&*(),.?":{}|<>]/.test(p) }
+    ];
+});
+
+const isPasswordValid = computed(() => passwordRequirements.value.every(r => r.met));
+const passwordsMatch = computed(() => form.value.password === form.value.password_confirmation);
 
 const route = useRoute();
 const router = useRouter();
@@ -28,8 +40,15 @@ const handleSubmit = async () => {
         localStorage.setItem('user', JSON.stringify(userData));
 
         if (mode.value === 'signup') {
-            alert("Account created!");
+        if (!isPasswordValid.value) {
+            alert("Please meet all password requirements.");
+            return;
         }
+        if (!passwordsMatch.value) {
+            alert("Passwords do not match.");
+            return;
+        }
+    }
         
         if (userData.role === 'student') {
             router.push('/student/login/dashboard');
@@ -91,12 +110,27 @@ const toggleMode = (newMode) => {
             <input v-model="form.password" type="password" required>
           </label>
 
+          <div v-if="mode === 'signup'" class="password-checklist">
+            <div v-for="req in passwordRequirements" :key="req.label" 
+                :class="['requirement-item', { 'is-met': req.met }]">
+              <span class="icon">{{ req.met ? '✓' : '○' }}</span>
+              {{ req.label }}
+            </div>
+          </div>
+
           <label v-if="mode === 'signup'">
             Confirm Password:
             <input v-model="form.password_confirmation" type="password" required>
+            <span v-if="form.password && !passwordsMatch" class="error-text">
+              Passwords do not match
+            </span>
           </label>
 
-          <button type="submit" class="submit-btn">
+          <button 
+            type="submit" 
+            class="submit-btn"
+            :disabled="mode === 'signup' && (!isPasswordValid || !passwordsMatch)"
+          >
             {{ mode === 'signup' ? 'Create Account' : 'Sign In' }} →
           </button>
         </form>
@@ -228,5 +262,42 @@ input:focus {
   color: #3e55f8; 
   text-decoration: none; 
   font-weight: 600; 
+}
+
+.password-checklist {
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+    padding: 10px;
+    background: #f8faff;
+    border-radius: 8px;
+    border: 1px solid #DEE4FE;
+}
+
+.requirement-item {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s ease;
+}
+
+.requirement-item.is-met {
+    color: #065f46; 
+    font-weight: 600;
+}
+
+.error-text {
+    font-size: 0.75rem;
+    color: #ef4444;
+    display: block;
+    margin-top: 4px;
+}
+
+.submit-btn:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 </style>

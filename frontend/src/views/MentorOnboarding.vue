@@ -1,8 +1,9 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import logoUrl from '../assets/logo.png'; 
+import { ref, watch, onMounted, computed } from 'vue'; 
+
 
 const props = defineProps(['initialMode']);
 const route = useRoute();
@@ -20,6 +21,16 @@ const form = ref({
 });
 
 const handleSubmit = async () => {
+    if (!isPasswordValid.value) {
+        alert("Please ensure your password meets all requirements.");
+        return;
+    }
+
+    if (form.value.password !== form.value.password_confirmation) {
+        alert("Passwords do not match.");
+        return;
+    }
+
     try {
         await axios.get('http://localhost:8000/sanctum/csrf-cookie', { withCredentials: true });
         await axios.post('http://localhost:8000/api/register', form.value, {
@@ -31,7 +42,8 @@ const handleSubmit = async () => {
         mode.value = 'login'; 
     } catch (error) {
         console.error("Signup Error:", error.response?.data || error.message);
-        alert("Signup failed. Check console for details.");
+        const errorMsg = error.response?.data?.message || "Signup failed. Check console for details.";
+        alert(errorMsg);
     }
 };
 
@@ -62,6 +74,17 @@ const toggleMode = (newMode) => {
 };
 
 const universities = ref([]);
+
+const passwordRequirements = computed(() => {
+    const p = form.value.password;
+    return [
+        { label: 'At least 8 characters', met: p.length >= 8 },
+        { label: 'Contains a number', met: /\d/.test(p) },
+        { label: 'Contains a special character (@$!%*?)', met: /[!@#$%^&*(),.?":{}|<>]/.test(p) }
+    ];
+});
+
+const isPasswordValid = computed(() => passwordRequirements.value.every(r => r.met));
 
 onMounted(async () => {
     try {
@@ -115,12 +138,27 @@ onMounted(async () => {
             <input v-model="form.password" type="password" required>
           </label>
 
+          <div v-if="mode === 'signup'" class="password-checklist">
+            <div v-for="req in passwordRequirements" :key="req.label" 
+                :class="['requirement-item', { 'is-met': req.met }]">
+              <span class="icon">{{ req.met ? '✓' : '○' }}</span>
+              {{ req.label }}
+            </div>
+          </div>
+
           <label v-if="mode === 'signup'">
             Confirm Password:
             <input v-model="form.password_confirmation" type="password" required>
+            <span v-if="form.password && form.password !== form.password_confirmation" class="error-text">
+                Passwords do not match
+            </span>
           </label>
 
-          <button type="submit" class="submit-btn">
+          <button 
+            type="submit" 
+            class="submit-btn" 
+            :disabled="mode === 'signup' && (!isPasswordValid || form.password !== form.password_confirmation)"
+          >
             {{ mode === 'signup' ? 'Submit for Verification' : 'Sign In' }} →
           </button>
         </form>
@@ -287,5 +325,46 @@ input:focus {
 .uni-select:focus {
   outline: none;
   border-color: #3e55f8; 
+}
+
+.password-checklist {
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+    padding: 10px;
+    background: #f8faff;
+    border-radius: 8px;
+    border: 1px solid #DEE4FE;
+}
+
+.requirement-item {
+    font-size: 0.75rem;
+    color: #9ca3af; 
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s ease;
+}
+
+.requirement-item.is-met {
+    color: #065f46;
+    font-weight: 600;
+}
+
+.error-text {
+    font-size: 0.75rem;
+    color: #ef4444;
+    display: block;
+    margin-top: 4px;
+}
+
+.submit-btn:disabled {
+    background-color: #9ca3af; 
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.submit-btn:disabled:hover {
+    background-color: #9ca3af; 
 }
 </style>
