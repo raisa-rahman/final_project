@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\MentorProfile;
+use Illuminate\Support\Facades\Storage;
+
 
 class MentorProfileController extends Controller
 {
@@ -62,5 +64,27 @@ class MentorProfileController extends Controller
         ->firstOrFail();
         
     return response()->json($profile); 
+}
+
+
+public function updateStatus(Request $request, $id)
+{
+    $profile = MentorProfile::findOrFail($id);
+    $newStatus = (int) $request->is_verified;
+
+    if ($newStatus === 2) {
+        if ($profile->document_path) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($profile->document_path);
+        }
+        $profile->document_path = null;
+    }
+
+    $profile->is_verified = $newStatus;
+    $profile->save(); 
+
+    return response()->json([
+        'is_verified' => $profile->is_verified,
+        'document_path' => $profile->document_path
+    ]);
 }
 }

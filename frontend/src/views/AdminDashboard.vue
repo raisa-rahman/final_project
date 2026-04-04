@@ -82,6 +82,21 @@ const adminLogout = async () => {
     router.push('/adminlogin');
 };
 
+const updateStatus = async (id: number, status: number) => {
+  try {
+    const response = await axios.post(`http://localhost:8000/api/admin/mentors/${id}/status`, {
+      is_verified: status
+    });
+    
+    console.log("Server Response:", response.data);
+    await fetchData(); 
+    
+    alert(status === 2 ? "Mentor rejected and ID deleted." : "Mentor approved.");
+  } catch (err) {
+    console.error(err);
+    alert("Error updating status");
+  }
+};
 
 onMounted(fetchData);
 </script>
@@ -99,36 +114,53 @@ onMounted(fetchData);
     
     <div v-else class="dashboard-grid">
       <section class="admin-section">
-        <h3>Mentor Verification</h3>
-        <div class="mentor-list">
-          <div v-for="mentor in mentors" :key="mentor.id" class="mentor-row">
-            <div class="info-group">
-               <img v-if="mentor.profile_photo_path" 
-                    :src="'http://localhost:8000/storage/' + mentor.profile_photo_path" 
-                    class="admin-thumbnail" />
-               <div v-else class="admin-thumbnail placeholder">No Photo</div>
-               
-               <div class="info">
-                 <strong>{{ mentor.user?.name }}</strong>
-                 <span class="email">{{ mentor.user?.email }}</span>
-                 <a v-if="mentor.document_path" 
-                    :href="'http://localhost:8000/storage/' + mentor.document_path" 
-                    target="_blank" 
-                    class="view-id-link">View University ID</a>
-                 <span v-else class="no-id">No ID Uploaded</span>
-               </div>
-            </div>
-            
-            <div class="status-pill" :class="mentor.is_verified ? 'verified' : 'pending'">
-              {{ mentor.is_verified ? 'Approved' : 'Unapproved' }}
-            </div>
-
-            <button @click="toggleVerification(mentor.id)" :class="mentor.is_verified ? 'btn-danger' : 'btn-success'">
-              {{ mentor.is_verified ? 'Unapprove' : 'Approve' }}
-            </button>
-          </div>
+  <h3>Mentor Verification</h3>
+  <div class="mentor-list">
+    <div v-for="mentor in mentors" :key="mentor.id" class="mentor-row">
+      
+      <div class="info-group">
+        <img v-if="mentor.profile_photo_path" 
+             :src="'http://localhost:8000/storage/' + mentor.profile_photo_path" 
+             class="admin-thumbnail" />
+        <div v-else class="admin-thumbnail placeholder">No Photo</div>
+        
+        <div class="info">
+          <strong>{{ mentor.user?.name || 'Unknown Mentor' }}</strong>
+          <span class="email">{{ mentor.user?.email }}</span>
+          
+          <a v-if="mentor.document_path" 
+             :href="'http://localhost:8000/storage/' + mentor.document_path" 
+             target="_blank" 
+             class="view-id-link">View University ID</a>
+          <span v-else class="no-id">No ID Uploaded</span>
         </div>
-      </section>
+      </div>
+
+      <div class="status-pill" 
+           :class="{ 
+             'verified': Number(mentor.is_verified) === 1, 
+             'pending-pill': Number(mentor.is_verified) === 0, 
+             'rejected-pill': Number(mentor.is_verified) === 2 
+           }">
+        {{ Number(mentor.is_verified) === 1 ? 'Approved' : (Number(mentor.is_verified) === 2 ? 'Unapproved' : 'Pending') }}
+      </div>
+
+      <div class="admin-actions">
+        <button v-if="Number(mentor.is_verified) !== 1" 
+                @click="updateStatus(mentor.id, 1)" 
+                class="btn-success">
+          Approve
+        </button>
+        
+        <button v-if="Number(mentor.is_verified) !== 2" 
+                @click="updateStatus(mentor.id, 2)" 
+                class="btn-danger">
+          Reject
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
 
       <section class="admin-section">
   <h3>University Management</h3>
@@ -380,4 +412,19 @@ h1, h2, h3 {
 
 .btn-text.success { color: var(--sc-green); }
 .btn-text.danger { color: #ff4d4d; }
+
+.pending-pill { 
+  background: var(--sc-light-purple); 
+  color: var(--sc-blue); 
+}
+
+.rejected-pill { 
+  background: #fee2e2; 
+  color: #ff4d4d; 
+}
+
+.admin-actions {
+  display: flex;
+  gap: 8px;
+}
 </style>

@@ -336,16 +336,27 @@ onMounted(fetchData);
       <button @click="handleLogout" class="logout-btn">Log Out</button>
     </header>
     
-    <div v-if="mentorProfile.id" class="banner" :class="Number(mentorProfile.is_verified) === 1 ? 'active' : 'pending'">
-      <div class="banner-content">
-        <span class="status-icon">{{ Number(mentorProfile.is_verified) === 1 ? '✅' : '⏳' }}</span>
-        <div>
-          <strong>{{ Number(mentorProfile.is_verified) === 1 ? 'Verified Mentor' : 'Verification Pending' }}</strong>
-          <p v-if="Number(mentorProfile.is_verified) === 1">Your profile is visible to international students.</p>
-          <p v-else>Please upload your ID below for admin review.</p>
-        </div>
-      </div>
+    <div v-if="mentorProfile.id" class="banner" 
+     :class="{ 
+       'active': Number(mentorProfile.is_verified) === 1, 
+       'pending': Number(mentorProfile.is_verified) === 0, 
+       'rejected': Number(mentorProfile.is_verified) === 2 
+     }">
+  <div class="banner-content">
+    <span class="status-icon">
+      {{ Number(mentorProfile.is_verified) === 1 ? '✅' : (Number(mentorProfile.is_verified) === 2 ? '❌' : '⏳') }}
+    </span>
+    <div>
+      <strong v-if="Number(mentorProfile.is_verified) === 1">Verified Mentor</strong>
+      <strong v-else-if="Number(mentorProfile.is_verified) === 2">Verification Declined</strong>
+      <strong v-else>Verification Pending</strong>
+      
+      <p v-if="Number(mentorProfile.is_verified) === 1">Your profile is visible to international students.</p>
+      <p v-else-if="Number(mentorProfile.is_verified) === 2">Mentor unapproved. Please upload another valid ID for re-review.</p>
+      <p v-else>Please upload your ID below for admin review.</p>
     </div>
+  </div>
+</div>
 
     <div class="grid-layout">
       <div class="profile-card">
@@ -411,6 +422,7 @@ onMounted(fetchData);
 
       <div class="verification-card">
         <h2>Identity Verification</h2>
+        <p>To become a verified mentor, please upload a valid ID document. This helps us maintain a trustworthy community for international students.</p>
         <div v-if="mentorProfile.id" class="upload-section">
           <div v-if="Number(mentorProfile.is_verified) === 1" class="verified-badge">✔️ Verified</div>
           <div v-else>
@@ -872,5 +884,11 @@ onMounted(fetchData);
 .past-filters select.small {
     max-width: 180px;
     cursor: pointer;
+}
+
+.banner.rejected {
+    background: #fee2e2;
+    border-color: #ef4444;
+    color: #991b1b;
 }
 </style>

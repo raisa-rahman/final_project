@@ -27,24 +27,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mentors/profile/{id}', function ($id) {
     return \App\Models\MentorProfile::with(['user', 'university', 'reviews'])
         ->findOrFail($id);
-});
-Route::get('/mentor/meetings/past', [MeetingController::class, 'past']);
+    });
+    Route::post('/admin/mentors/{id}/status', [MentorProfileController::class, 'updateStatus']);
+    Route::get('/mentor/meetings/past', [MeetingController::class, 'past']);
 
-Route::put('/mentor/profile', [MentorProfileController::class, 'update']); 
+    Route::put('/mentor/profile', [MentorProfileController::class, 'update']); 
 
-Route::get('/student/profile', function (Request $request) {
-    return response()->json(['profile' => $request->user()->studentProfile]);
-});
+    Route::get('/student/profile', function (Request $request) {
+        return response()->json(['profile' => $request->user()->studentProfile]);
+    });
 
-Route::get('/student/favorites', function (Request $request) {
-});
-    Route::get('/mentor/profile', [MentorProfileController::class, 'show']);
-    Route::get('/student/meetings', [MeetingController::class, 'studentIndex']);
-    Route::get('/mentor/meetings/requests', [MeetingController::class, 'requests']);
-    Route::get('/mentor/meetings/upcoming', [MeetingController::class, 'upcoming']);
-    Route::get('/user', fn (Request $request) => $request->user());
+    Route::get('/student/favorites', function (Request $request) {
+    });
+        Route::get('/mentor/profile', [MentorProfileController::class, 'show']);
+        Route::get('/student/meetings', [MeetingController::class, 'studentIndex']);
+        Route::get('/mentor/meetings/requests', [MeetingController::class, 'requests']);
+        Route::get('/mentor/meetings/upcoming', [MeetingController::class, 'upcoming']);
+        Route::get('/user', fn (Request $request) => $request->user());
 
-    Route::prefix('admin')->group(function () {
+        Route::prefix('admin')->group(function () {
         Route::get('/mentors', fn () => \App\Models\MentorProfile::with('user')->get());
         
         Route::post('/mentors/{id}/toggle-verify', function ($id) {
