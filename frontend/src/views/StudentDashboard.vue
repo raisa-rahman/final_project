@@ -374,119 +374,111 @@ onMounted(() => {
 <template>
   <div class="dashboard-container">
     <div class="booking-tracker-section">
-      <div class="section-header">
-        <h2>Your Meetings</h2>
-        <div class="tab-toggle">
-          <button @click="currentTab = 'upcoming'" :class="{ active: currentTab === 'upcoming' }" class="tab-btn">Upcoming</button>
-          <button @click="currentTab = 'past'" :class="{ active: currentTab === 'past' }" class="tab-btn">Past Sessions</button>
+  <div class="section-header">
+    <h2>Your Meetings</h2>
+    <div class="tab-toggle">
+      <button @click="currentTab = 'upcoming'" :class="{ active: currentTab === 'upcoming' }" class="tab-btn">Upcoming</button>
+      <button @click="currentTab = 'past'" :class="{ active: currentTab === 'past' }" class="tab-btn">Past Sessions</button>
+    </div>
+  </div>
+
+  <div v-if="categorizedMeetings[currentTab].length === 0" class="empty-state-card">
+    <p v-if="currentTab === 'upcoming'">No upcoming sessions. Time to connect with a mentor!</p>
+    <p v-else>No past sessions found.</p>
+  </div>
+
+  <div v-else class="request-list">
+    <div v-for="request in categorizedMeetings[currentTab]" :key="request.id" class="request-item">
+      <div class="request-header-row">
+        <div class="mentor-brief">
+          <div class="avatar-mini">{{ request.mentor_name.charAt(0) }}</div>
+          <div class="mentor-details-text">
+            <strong>{{ request.mentor_name }}</strong>
+            <div class="status-badge" :class="request.status.toLowerCase()">
+              {{ request.status }}
+            </div>
+          </div>
+        </div>
+        
+        <div class="request-actions-top" v-if="currentTab === 'upcoming' && editingMeetingId !== request.id">
+          <button @click="startReschedule(request)" class="action-link">Reschedule</button>
+          <button @click="cancelMeeting(request.id)" class="action-link danger">Cancel</button>
         </div>
       </div>
 
-      <div v-if="categorizedMeetings[currentTab].length === 0" class="empty-state-card">
-        <p v-if="currentTab === 'upcoming'">No upcoming sessions. Time to connect with a mentor!</p>
-        <p v-else>No past sessions found.</p>
-      </div>
+      <div class="request-body">
+        <div v-if="editingMeetingId !== request.id" class="meeting-time-block">
+          <div class="time-main">
+            <span class="icon">📅</span> {{ formatLongDate(request.date) }}
+          </div>
+          <div class="time-sub">
+            <span class="icon">🕒</span> {{ format12Hour(request.start_time) }} – {{ format12Hour(request.end_time) }}
+            <span class="duration-tag">{{ calculateDuration(request.start_time, request.end_time) }}</span>
+          </div>
+        </div>
 
-      <div v-else class="request-list">
-        <div v-for="request in categorizedMeetings[currentTab]" :key="request.id" class="request-item">
-          <div class="request-main">
-            <div class="mentor-meta">
-              <strong>{{ request.mentor_name }}</strong>
-              
-              <span v-if="editingMeetingId !== request.id" class="date-display">
-                {{ formatLongDate(request.date) }} <br>
-                {{ format12Hour(request.start_time) }} – {{ format12Hour(request.end_time) }}
-                <div v-if="request.end_time" class="duration-badge-student">
-                  ⏱️ {{ calculateDuration(request.start_time, request.end_time) }}
+        <div v-else class="edit-mode-container">
+            <div class="edit-grid">
+                <div class="edit-field">
+                    <label class="edit-label">New Date</label>
+                    <input v-model="editData.date" type="date" class="resched-input">
                 </div>
-              </span>
-              
-              <div v-else class="edit-inputs-row" style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 12px;">
-    <label class="edit-label">New Date</label>
-    <input v-model="editData.date" type="date" class="resched-input">
-    
-    <div class="time-picker-container" style="display: flex; flex-direction: column; gap: 10px;">
-        <div>
-          <div class="duration-preview" :class="{ 'invalid-text': ![15,30,45,60].includes(currentRescheduleDuration) }">
-    Current Duration: {{ currentRescheduleDuration }} minutes
-    <span v-if="![15,30,45,60].includes(currentRescheduleDuration)">
-        (Must be 15, 30, 45, or 60)
-    </span>
-</div>
-            <label class="edit-label">Start Time (8 AM - 6 PM)</label>
-            <div class="custom-time-picker">
-                <select v-model="startHour" @change="syncRescheduleTimes" class="time-select">
-                    <option v-for="h in allowedHours.filter(h => h.period === startPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
-                </select>
-                <span class="separator">:</span>
-                <select v-model="startMinute" @change="syncRescheduleTimes" class="time-select">
-                    <option v-for="m in ['00', '15', '30', '45']" :value="m">{{ m }}</option>
-                </select>
-                <select v-model="startPeriod" @change="syncRescheduleTimes" class="time-select period">
-                    <option value="AM">AM</option>
-                    <option value="PM">PM</option>
-                </select>
+                <div class="edit-field">
+                    <div class="duration-preview" :class="{ 'invalid-text': ![15,30,45,60].includes(currentRescheduleDuration) }">
+                        ⏱️ {{ currentRescheduleDuration }}m 
+                        <span v-if="![15,30,45,60].includes(currentRescheduleDuration)">(Must be 15/30/45/60)</span>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <div>
-            <label class="edit-label">End Time</label>
-            <div class="custom-time-picker">
-                <select v-model="endHour" @change="syncRescheduleTimes" class="time-select">
-                    <option v-for="h in allowedHours.filter(h => h.period === endPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
-                </select>
-                <span class="separator">:</span>
-                <select v-model="endMinute" @change="syncRescheduleTimes" class="time-select">
-                    <option v-for="m in ['00', '15', '30', '45']" :value="m">{{ m }}</option>
-                </select>
-                <select v-model="endPeriod" @change="syncRescheduleTimes" class="time-select period">
-                    <option value="AM">AM</option>
-                    <option value="PM">PM</option>
-                </select>
+            
+            <div class="edit-grid times">
+                <div class="edit-field">
+                    <label class="edit-label">Start Time</label>
+                    <div class="custom-time-picker">
+                        <select v-model="startHour" @change="syncRescheduleTimes" class="time-select">
+                            <option v-for="h in allowedHours.filter(h => h.period === startPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
+                        </select>
+                        <select v-model="startMinute" @change="syncRescheduleTimes" class="time-select">
+                            <option v-for="m in ['00', '15', '30', '45']" :value="m">{{ m }}</option>
+                        </select>
+                        <select v-model="startPeriod" @change="syncRescheduleTimes" class="time-select period">
+                            <option value="AM">AM</option><option value="PM">PM</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="edit-field">
+                    <label class="edit-label">End Time</label>
+                    <div class="custom-time-picker">
+                        <select v-model="endHour" @change="syncRescheduleTimes" class="time-select">
+                            <option v-for="h in allowedHours.filter(h => h.period === endPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
+                        </select>
+                        <select v-model="endMinute" @change="syncRescheduleTimes" class="time-select">
+                            <option v-for="m in ['00', '15', '30', '45']" :value="m">{{ m }}</option>
+                        </select>
+                        <select v-model="endPeriod" @change="syncRescheduleTimes" class="time-select period">
+                            <option value="AM">AM</option><option value="PM">PM</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
-</div>
-            <p class="session-topic" v-if="request.topic">Topic: {{ request.topic }}</p>
-          </div>
-
-          <div class="card-footer">
-            <div class="action-row">
-              <template v-if="currentTab === 'upcoming'">
-                <template v-if="editingMeetingId !== request.id">
-                  <button @click="startEdit(request)" class="btn-text">Reschedule</button>
-                  <button @click="cancelMeeting(request.id)" class="btn-text danger">Cancel</button>
-                </template>
-                <template v-else>
-                  <button @click="saveReschedule(request.id)" class="btn-text success">Save</button>
-                  <button @click="editingMeetingId = null" class="btn-text">Back</button>
-                </template>
-              </template>
-              <template v-else>
-                <button v-if="request.status === 'approved'" @click="toggleReviewForm(request.id)" class="btn-text success">
-                  {{ activeReviewMeetingId === request.id ? 'Close' : 'Leave Review' }}
-                </button>
-              </template>
+            <div class="edit-actions">
+                <button @click="submitReschedule(request.id)" class="save-btn small">Confirm Changes</button>
+                <button @click="editingMeetingId = null" class="cancel-link">Back</button>
             </div>
-            <span class="status-pill-minimal" :class="request.status">{{ request.status.toUpperCase() }}</span>
-          </div>
-
-          <div v-if="activeReviewMeetingId === request.id" class="review-section">
-            <ReviewForm 
-    :meeting-id="request.id"
-    :mentor-id="request.mentor_profile_id" 
-    @review-submitted="() => { activeReviewMeetingId = null; fetchSentRequests(); }" 
-/>
-          </div>
-          
-          <div v-if="currentTab === 'upcoming' && request.status === 'approved' && request.meeting_link" class="link-bar">
-            <a :href="request.meeting_link" target="_blank" class="join-pill">🎥 Join Jitsi</a>
-            <button @click="addToGoogleCalendar(request)" class="sync-pill">🗓️ Sync</button>
-          </div>
         </div>
       </div>
+
+      <div class="request-footer" v-if="editingMeetingId !== request.id && request.status.toLowerCase() === 'approved'">
+        <a v-if="request.meeting_link" :href="request.meeting_link" target="_blank" class="join-pill">
+          🎥 Join Jitsi
+        </a>
+        <button @click="addToGoogleCalendar(request)" class="sync-pill">
+          🗓️ Sync Google
+        </button>
+      </div>
     </div>
+  </div>
+</div>
 
     <main class="main-content">
       <header class="dashboard-header">
@@ -1003,5 +995,148 @@ input {
 .invalid-text {
     background: #fee2e2;
     color: #ef4444;
+}
+
+/* Layout & Card Styling */
+.request-item {
+  background: #ffffff;
+  border: 1px solid #DEE4FE;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.request-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.mentor-brief {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-mini {
+  width: 40px;
+  height: 40px;
+  background: #3e55f8;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-family: 'Red Hat Display', sans-serif;
+}
+
+.mentor-details-text strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+.status-badge.approved { background: #e6fffa; color: #2DE1AA; }
+.status-badge.pending { background: #fff7ed; color: #F4BD3F; }
+
+/* Time Block */
+.meeting-time-block {
+  padding: 0.5rem 0;
+}
+
+.time-main {
+  font-weight: 600;
+  color: #1a1f3c;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.time-sub {
+  color: #6b7280;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.duration-tag {
+  background: #f3f4f6;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Action Buttons & Links */
+.action-link {
+  background: none;
+  border: none;
+  color: #3e55f8;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-left: 12px;
+  font-family: 'Red Hat Display', sans-serif;
+}
+
+.action-link.danger { color: #ef4444; }
+
+.request-footer {
+  display: flex;
+  gap: 10px;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #DEE4FE;
+}
+
+/* Reschedule Mode Specifics */
+.edit-mode-container {
+    background: #f8faff;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #DEE4FE;
+}
+
+.edit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.edit-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.save-btn.small {
+    width: auto;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+}
+
+.cancel-link {
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
 }
 </style>
