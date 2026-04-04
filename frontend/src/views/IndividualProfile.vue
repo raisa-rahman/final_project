@@ -139,42 +139,94 @@ onMounted(fetchMentorDetails);
         </div>
         
         <div class="info-section">
-    <h1>{{ mentor.user?.name }}</h1>
-    
-    <div class="profile-rating-badge" v-if="mentor.reviews && mentor.reviews.length > 0">
-        <span class="stars">★ ★ ★ ★ ★</span>
-        <span class="rating-text">
-            {{ Number(mentor.rating_avg || 0).toFixed(1) }} 
-            ({{ mentor.reviews.length }} {{ mentor.reviews.length === 1 ? 'review' : 'reviews' }})
-        </span>
-    </div>
-    
-    <div v-else class="no-rating-badge" style="color: #6b7280; font-style: italic; margin: 0.5rem 0;">
-        No reviews yet
-    </div>
+          <h1>{{ mentor.user?.name }}</h1>
+          <p class="current-role">{{ mentor.current_role }} @ {{ mentor.company }}</p>
+          <p class="uni-alma-mater">
+            <span class="icon">🎓</span> {{ mentor.university?.name }} '{{ mentor.graduation_year }}
+          </p>
 
-    <p class="expertise-tag">{{ mentor.subject_expertise }}</p>
-    <p class="uni-name">{{ mentor.university?.name || mentor.target_university }}</p>
-</div>
+          <div class="stats-bar">
+            <div class="stat-item">
+              <span class="stat-value">{{ Number(mentor.rating_avg || 0).toFixed(1) }} ★</span>
+              <span class="stat-label">Rating</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ mentor.reviews?.length || 0 }}</span>
+              <span class="stat-label">Reviews</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">100%</span>
+              <span class="stat-label">Response</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-actions">
+           <button @click="showBookingModal = true" class="book-now-btn">Request a Session</button>
+        </div>
       </div>
 
-      <div class="profile-content">
-        <section class="bio-card">
-          <h3>About Me</h3>
-          <p>{{ mentor.bio || 'This mentor hasn’t added a bio yet.' }}</p>
-        </section>
+      <div class="profile-grid">
+        <div class="main-content-flow">
+          
+          <section class="content-card bio-section">
+            <h3>The Journey</h3>
+            <div class="narrative-body">
+              <p class="bio-text">{{ mentor.bio || 'This mentor hasn’t added their story yet.' }}</p>
+            </div>
+            
+            <div class="human-tags" v-if="mentor.interests">
+              <span v-for="tag in mentor.interests.split(',')" :key="tag" class="tag">
+                #{{ tag.trim() }}
+              </span>
+            </div>
+          </section>
 
-        <section class="expertise-card">
-          <h3>Mentorship Focus</h3>
-          <ul>
-            <li>Application Strategy</li>
-            <li>Cultural Adaptation in {{ mentor.target_country }}</li>
-            <li>Subject Deep-dives</li>
-          </ul>
-          <button @click="showBookingModal = true" class="book-now-btn">Request a Session</button>
-        </section>
+          <section class="content-card roadmap-section">
+            <h3>🛣️ Academic & Career Roadmap</h3>
+            <div class="roadmap-container">
+               <div class="roadmap-block">
+                 <h4>Then (Education)</h4>
+                 <p>{{ mentor.roadmap || 'Education details pending.' }}</p>
+               </div>
+            </div>
+          </section>
+
+          <section class="content-card reviews-section" v-if="mentor.reviews && mentor.reviews.length > 0">
+            <h3>Student Feedback</h3>
+            <div v-for="review in mentor.reviews" :key="review.id" class="review-item">
+                <div class="review-header">
+                    <span class="stars">★ {{ review.rating }}</span>
+                    <span class="review-date">{{ new Date(review.created_at).toLocaleDateString() }}</span>
+                </div>
+                <p class="review-comment">{{ review.comment || 'No comment provided.' }}</p>
+            </div>
+          </section>
+        </div>
+
+        <div class="sidebar-flow">
+          <section class="content-card expertise-sidebar">
+            <h3>I can help with...</h3>
+            <div class="expertise-tags">
+               <span class="expertise-pill">{{ mentor.subject_expertise }}</span>
+            </div>
+
+            <div class="ask-me-section">
+              <h4>Ask me about:</h4>
+              <div class="topics-box">
+                {{ mentor.ask_me_about || 'General career advice and university applications.' }}
+              </div>
+            </div>
+          </section>
+
+          <section class="content-card quick-links">
+             <h4>Quick Info</h4>
+             <p><strong>Response Time:</strong> Within 24 hours</p>
+             <p><strong>Location:</strong> {{ mentor.target_country || 'United Kingdom' }}</p>
+          </section>
+        </div>
       </div>
-
+    
       <div v-if="showBookingModal" class="modal-overlay" @click.self="showBookingModal = false">
         <div class="booking-modal">
           <h2>Request a Mentorship Session</h2>
@@ -400,7 +452,6 @@ input, textarea {
     font-family: 'SF-UI Text', sans-serif;
 }
 
-/* Custom Time Picker Styles for Mentor Side */
 .custom-time-picker {
     display: flex;
     align-items: center;
@@ -463,5 +514,130 @@ input, textarea {
 .duration-indicator.invalid {
     background: #fee2e2;
     color: #ef4444;
+}
+
+.profile-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.profile-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 2.5rem;
+    align-items: center;
+    background: white;
+    padding: 2.5rem;
+    border-radius: 20px;
+    border: 1px solid #DEE4FE;
+}
+
+.current-role {
+    font-size: 1.25rem;
+    color: #3e55f8;
+    font-weight: 700;
+    margin: 0.25rem 0;
+}
+
+.uni-alma-mater {
+    color: #6b7280;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+}
+
+.stats-bar {
+    display: flex;
+    gap: 2rem;
+    border-top: 1px solid #f0f2f5;
+    padding-top: 1.5rem;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-family: 'Red Hat Display', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #1a1f3c;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.content-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    border: 1px solid #DEE4FE;
+    margin-bottom: 1.5rem;
+}
+
+.content-card h3 {
+    margin-bottom: 1.25rem;
+    font-size: 1.2rem;
+    border-bottom: 2px solid #f8faff;
+    padding-bottom: 0.5rem;
+}
+
+.human-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 1.5rem;
+}
+
+.tag {
+    background: #f0f2ff;
+    color: #3e55f8;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.expertise-pill {
+    display: inline-block;
+    background: #e6fffa;
+    color: #065f46;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.topics-box {
+    background: #f8faff;
+    padding: 1rem;
+    border-radius: 10px;
+    font-style: italic;
+    color: #4b5563;
+    line-height: 1.5;
+    border-left: 4px solid #F4BD3F;
+}
+
+.ask-me-section h4 {
+    font-size: 0.9rem;
+    margin: 1rem 0 0.5rem 0;
+}
+
+@media (max-width: 900px) {
+    .profile-grid { grid-template-columns: 1fr; }
+    .profile-header { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+    .stats-bar { justify-content: center; }
 }
 </style>

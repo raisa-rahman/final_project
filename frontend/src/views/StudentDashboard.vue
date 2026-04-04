@@ -997,7 +997,6 @@ input {
     color: #ef4444;
 }
 
-/* Layout & Card Styling */
 .request-item {
   background: #ffffff;
   border: 1px solid #DEE4FE;
@@ -1040,7 +1039,6 @@ input {
   font-size: 1.05rem;
 }
 
-/* Status Badges */
 .status-badge {
   display: inline-block;
   font-size: 0.7rem;
@@ -1053,7 +1051,6 @@ input {
 .status-badge.approved { background: #e6fffa; color: #2DE1AA; }
 .status-badge.pending { background: #fff7ed; color: #F4BD3F; }
 
-/* Time Block */
 .meeting-time-block {
   padding: 0.5rem 0;
 }
@@ -1081,7 +1078,6 @@ input {
   font-weight: 600;
 }
 
-/* Action Buttons & Links */
 .action-link {
   background: none;
   border: none;
@@ -1103,7 +1099,6 @@ input {
   border-top: 1px dashed #DEE4FE;
 }
 
-/* Reschedule Mode Specifics */
 .edit-mode-container {
     background: #f8faff;
     padding: 1rem;

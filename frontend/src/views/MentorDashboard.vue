@@ -53,8 +53,14 @@ const mentorProfile = ref({
 
 const profileForm = ref({
     subject_expertise: '',
-    university_id:'', 
-    bio: '' 
+    current_role: '',
+    company: '',
+    graduation_year: '',
+    bio: '',
+    interests: '',
+    roadmap: '',
+    ask_me_about: '',
+    university_id: ''
 });
 
 const fetchData = async () => {
@@ -77,8 +83,14 @@ const fetchData = async () => {
 console.log("Full Profile Object:", data);         
         profileForm.value = {
     subject_expertise: data.subject_expertise || '',
+    current_role: data.current_role || '',
+    company: data.company || '',
+    graduation_year: data.graduation_year || '',
     bio: data.bio || '',
-    university_id: data.university_id || data.university?.id || ''
+    interests: data.interests || '',
+    roadmap: data.roadmap || '',
+    ask_me_about: data.ask_me_about || '',
+    university_id: data.university_id || ''
 };
 
         meetingRequests.value = requestsRes.data;
@@ -359,66 +371,111 @@ onMounted(fetchData);
 </div>
 
     <div class="grid-layout">
-      <div class="profile-card">
-        <div class="header-with-action">
-          <h2>Professional Profile</h2>
-          <button @click="isEditingProfile = !isEditingProfile" class="btn-text">
-            {{ isEditingProfile ? 'Cancel' : 'Edit Details' }}
-          </button>
-        </div>
+  <div class="profile-card expanded-profile">
+    <div class="header-with-action">
+      <h2>Professional Profile</h2>
+      <button @click="isEditingProfile = !isEditingProfile" class="btn-text">
+        {{ isEditingProfile ? 'Cancel' : 'Edit Details' }}
+      </button>
+    </div>
 
-        <div v-if="isEditingProfile" class="edit-form">
+    <div v-if="isEditingProfile" class="edit-form grid-form">
+      
+      <h3 class="form-section-title">1. Identity & Credentials</h3>
+      <div class="form-row">
         <div class="form-group photo-edit-section">
-    <label>Profile Photo</label>
-    <div class="edit-photo-preview">
-        <img v-if="mentorProfile.profile_photo_path" 
-             :src="`http://localhost:8000/storage/${mentorProfile.profile_photo_path}`" 
-             class="mentor-dashboard-img small">
-        <div v-else class="photo-placeholder small">{{ user?.name?.charAt(0) }}</div>
-        
-        <FileUpload 
-            uploadType="photo" 
-            :profileId="mentorProfile.id" 
-            @upload-success="handlePhotoSuccess" 
-        />
-    </div>
-</div>
-          <div class="form-group">
-            <label>Subject Expertise</label>
-            <input v-model="profileForm.subject_expertise" class="resched-input">
+          <label>Profile Photo</label>
+          <div class="edit-photo-preview">
+              <img v-if="mentorProfile.profile_photo_path" :src="`http://localhost:8000/storage/${mentorProfile.profile_photo_path}`" class="mentor-dashboard-img small">
+              <div v-else class="photo-placeholder small">{{ user?.name?.charAt(0) }}</div>
+              <FileUpload uploadType="photo" :profileId="mentorProfile.id" @upload-success="handlePhotoSuccess" />
           </div>
-          <div class="form-group">
-            <label>University</label>
-            <select v-model="profileForm.university_id" class="resched-input uni-select-dropdown">
-    <option value="" disabled>Select your institution</option>
-    <option v-for="uni in universities" :key="uni.id" :value="uni.id">
-        {{ uni.name }}
-    </option>
-</select>
-            </div>
-          <div class="form-group">
-            <label>Professional Bio</label>
-            <textarea v-model="profileForm.bio" class="resched-input" rows="4"></textarea>
-          </div>
-          <button @click="saveProfile" class="btn-text success">Save Changes</button>
         </div>
-
-        <div v-else class="profile-upload-wrapper">
-    <div class="mentor-photo-container">
-        <img v-if="mentorProfile.profile_photo_path" :src="`http://localhost:8000/storage/${mentorProfile.profile_photo_path}`" class="mentor-dashboard-img">
-        <div v-else class="photo-placeholder">{{ user?.name?.charAt(0) }}</div>
-    </div>
-    <div class="details-display">
-        <p><strong>Expertise:</strong> {{ mentorProfile.subject_expertise || 'Not set' }}</p>
-        
-        <p><strong>University:</strong> 
-            {{ mentorProfile.university?.name || mentorProfile.university || 'Not set' }}
-        </p>
-        
-        <p><strong>Bio:</strong> {{ mentorProfile.bio || 'No bio provided.' }}</p>
-    </div>
-</div>
+        <div class="input-stack">
+          <div class="form-group">
+            <label>Current Role (e.g. Software Engineer)</label>
+            <input v-model="profileForm.current_role" class="resched-input" placeholder="What is your title?">
+          </div>
+          <div class="form-group">
+            <label>Company</label>
+            <input v-model="profileForm.company" class="resched-input" placeholder="Where do you work?">
+          </div>
+        </div>
       </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>University</label>
+          <select v-model="profileForm.university_id" class="resched-input uni-select-dropdown">
+            <option v-for="uni in universities" :key="uni.id" :value="uni.id">{{ uni.name }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Graduation Year</label>
+          <input v-model="profileForm.graduation_year" type="number" class="resched-input" placeholder="YYYY">
+        </div>
+      </div>
+
+      <h3 class="form-section-title">2. Your Narrative (The Bio)</h3>
+      <div class="form-group">
+        <label>The "Why" & Journey (Bio)</label>
+        <textarea v-model="profileForm.bio" class="resched-input" rows="5" placeholder="Tell students about your pivot, your interests, and why you mentor..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Human Tags (Interests)</label>
+        <input v-model="profileForm.interests" class="resched-input" placeholder="e.g. Marathon runner, Sci-fi nerd, Amateur chef">
+      </div>
+
+      <h3 class="form-section-title">3. Roadmap & "Ask Me About"</h3>
+      <div class="form-group">
+        <label>Academic & Career Roadmap</label>
+        <textarea v-model="profileForm.roadmap" class="resched-input" rows="3" placeholder="Major, minor, key societies or internships..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Ask Me About... (Specific Topics)</label>
+        <textarea v-model="profileForm.ask_me_about" class="resched-input" rows="3" placeholder="e.g. Choosing UX modules, balancing part-time jobs..."></textarea>
+      </div>
+
+      <button @click="saveProfile" class="save-btn-large">Save Professional Profile</button>
+    </div>
+
+    <div v-else class="profile-view-layout">
+      <div class="profile-sidebar">
+        <div class="mentor-photo-container">
+          <img v-if="mentorProfile.profile_photo_path" :src="`http://localhost:8000/storage/${mentorProfile.profile_photo_path}`" class="mentor-dashboard-img">
+          <div v-else class="photo-placeholder">{{ user?.name?.charAt(0) }}</div>
+        </div>
+        <div class="identity-badge">
+          <p class="role-text">{{ mentorProfile.current_role }} @ {{ mentorProfile.company }}</p>
+          <p class="uni-text">{{ mentorProfile.university?.name }} '{{ mentorProfile.graduation_year }}</p>
+        </div>
+      </div>
+
+      <div class="profile-main-content">
+        <section class="bio-section">
+          <h4>About Me</h4>
+          <p>{{ mentorProfile.bio || 'No bio provided.' }}</p>
+          <div class="tag-cloud">
+            <span v-for="tag in mentorProfile.interests?.split(',')" :key="tag" class="human-tag">
+              #{{ tag.trim() }}
+            </span>
+          </div>
+        </section>
+
+        <section class="roadmap-section">
+          <h4>🛣️ Career Roadmap</h4>
+          <p>{{ mentorProfile.roadmap || 'Not set' }}</p>
+        </section>
+
+        <section class="expertise-section">
+          <h4>💡 Ask Me About</h4>
+          <div class="expertise-box">
+            {{ mentorProfile.ask_me_about || 'Not set' }}
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
 
       <div class="verification-card">
         <h2>Identity Verification</h2>
@@ -890,5 +947,63 @@ onMounted(fetchData);
     background: #fee2e2;
     border-color: #ef4444;
     color: #991b1b;
+}
+
+.form-section-title {
+  margin: 1.5rem 0 0.5rem 0;
+  font-size: 1.1rem;
+  color: #3e55f8;
+  border-bottom: 1px solid #DEE4FE;
+  padding-bottom: 5px;
+}
+
+.profile-view-layout {
+  display: flex;
+  gap: 2rem;
+}
+
+.profile-sidebar {
+  flex: 0 0 200px;
+  text-align: center;
+}
+
+.identity-badge {
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.role-text { font-weight: 800; color: #1a1f3c; margin: 0; }
+.uni-text { color: #6b7280; font-style: italic; }
+
+.human-tag {
+  display: inline-block;
+  background: #f0f2ff;
+  color: #3e55f8;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-right: 8px;
+  margin-top: 8px;
+}
+
+.expertise-box {
+  background: #f8faff;
+  border-left: 4px solid #2DE1AA;
+  padding: 15px;
+  border-radius: 4px;
+  font-style: italic;
+}
+
+.save-btn-large {
+  background: #3e55f8;
+  color: white;
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  margin-top: 20px;
+  cursor: pointer;
+  border: none;
 }
 </style>

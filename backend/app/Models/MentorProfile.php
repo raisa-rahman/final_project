@@ -10,7 +10,13 @@ class MentorProfile extends Model
         'user_id',
         'university_id',
         'subject_expertise',
+        'current_role',     
+        'company',           
+        'graduation_year',    
         'bio',
+        'interests',       
+        'roadmap',          
+        'ask_me_about',     
         'is_verified',
         'target_country',
         'current_university_year',
@@ -19,35 +25,38 @@ class MentorProfile extends Model
         'document_path'      
     ];
 
-    public function user(){
+    public function user()
+    {
         return $this->belongsTo(User::class);
     }
 
-    public function availabilities(){
+    public function availabilities()
+    {
         return $this->hasMany(Availability::class);
     }
 
-    public function defaultAvailabilities(){
+    public function defaultAvailabilities()
+    {
         return $this->hasMany(DefaultAvailability::class);
     }
 
     public function meetings()
-{
-    return $this->hasMany(Meeting::class);
-}
-
-    public function reviews() {
-    return $this->hasMany(Review::class);
-}
-
-public function university()
-{
-    return $this->belongsTo(University::class);
-}
-
-
-    public function favoritedBy(){
-        return $this->belongsToMany(User::class, 'favorites', 'mentor_profile_id', 'user_id');
+    {
+        return $this->hasMany(Meeting::class);
     }
 
+    public function reviews() 
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function university()
+    {
+        return $this->belongsTo(University::class);
+    }
+
+    public function favoritedBy()
+    {
+        return $this->belongsToMany(User::class, 'favorites', 'mentor_profile_id', 'user_id');
+    }
 }
