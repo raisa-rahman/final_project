@@ -29,27 +29,19 @@ Route::middleware('auth:sanctum')->group(function () {
         ->findOrFail($id);
 });
 
+Route::put('/mentor/profile', [MentorProfileController::class, 'update']); 
+
 Route::get('/student/profile', function (Request $request) {
     return response()->json(['profile' => $request->user()->studentProfile]);
 });
 
 Route::get('/student/favorites', function (Request $request) {
 });
-    Route::get('/mentor/profile', function (Request $request) {
-        return response()->json(['profile' => $request->user()->mentorProfile]);
-    });
+    Route::get('/mentor/profile', [MentorProfileController::class, 'show']);
     Route::get('/student/meetings', [MeetingController::class, 'studentIndex']);
     Route::get('/mentor/meetings/requests', [MeetingController::class, 'requests']);
     Route::get('/mentor/meetings/upcoming', [MeetingController::class, 'upcoming']);
     Route::get('/user', fn (Request $request) => $request->user());
-    Route::put('/mentor/profile', function (Request $request) {
-        $request->validate(['subject_expertise' => 'required|string', 'university' => 'required|string', 'bio' => 'nullable|string']);
-        $profile = \App\Models\MentorProfile::updateOrCreate(
-            ['user_id' => Auth::id()],
-            $request->only(['subject_expertise', 'university', 'bio'])
-        );
-        return response()->json(['profile' => $profile]);
-    });
 
     Route::prefix('admin')->group(function () {
         Route::get('/mentors', fn () => \App\Models\MentorProfile::with('user')->get());

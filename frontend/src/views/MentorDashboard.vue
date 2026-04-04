@@ -52,33 +52,32 @@ const mentorProfile = ref({
 
 const profileForm = ref({
     subject_expertise: '',
-    university: '', 
+    university_id:'', 
     bio: '' 
 });
 
 const fetchData = async () => {
     try {
-        const [profileRes, requestsRes, upcomingRes] = await Promise.all([
+        const [profileRes, requestsRes, upcomingRes, uniRes] = await Promise.all([
             axios.get('http://localhost:8000/api/mentor/profile'),
             axios.get('http://localhost:8000/api/mentor/meetings/requests'), 
-            axios.get('http://localhost:8000/api/mentor/meetings/upcoming')
+            axios.get('http://localhost:8000/api/mentor/meetings/upcoming'),
+            axios.get('http://localhost:8000/api/universities') 
         ]);
         
+        universities.value = uniRes.data;
         const data = profileRes.data.profile || profileRes.data;
-        mentorProfile.value = data;
-        
+mentorProfile.value = data;
+
+console.log("Full Profile Object:", data);         
+        profileForm.value = {
+    subject_expertise: data.subject_expertise || '',
+    bio: data.bio || '',
+    university_id: data.university_id || data.university?.id || ''
+};
+
         meetingRequests.value = requestsRes.data;
         upcomingMeetings.value = upcomingRes.data;
-        
-        const uniName = typeof data.university === 'object' && data.university !== null 
-            ? data.university.name 
-            : (data.university || '');
-
-        profileForm.value = {
-            subject_expertise: data.subject_expertise || '',
-            university: uniName,
-            bio: data.bio || ''
-        };
     } catch (err) {
         console.error("Failed to load dashboard data", err);
     } finally {
@@ -86,16 +85,28 @@ const fetchData = async () => {
     }
 };
 
-
 const saveProfile = async () => {
     try {
-        await axios.put('http://localhost:8000/api/mentor/profile', profileForm.value);
+        const payload = {
+            subject_expertise: profileForm.value.subject_expertise,
+            university_id: profileForm.value.university_id, 
+            bio: profileForm.value.bio
+        };
+
+        console.log("Sending Payload:", payload); 
+
+        await axios.put('http://localhost:8000/api/mentor/profile', payload);
+        
         isEditingProfile.value = false; 
         fetchData(); 
         alert("Profile updated successfully!");
     } catch (err) {
-        console.error(err);
-        alert("Failed to update profile. Ensure all fields are filled.");
+        if (err.response && err.response.status === 422) {
+            console.log("Validation Errors:", err.response.data.errors);
+            alert("Validation Error: " + JSON.stringify(err.response.data.errors));
+        } else {
+            console.error(err);
+        }
     }
 };
 
@@ -319,8 +330,13 @@ onMounted(fetchData);
           </div>
           <div class="form-group">
             <label>University</label>
-            <input v-model="profileForm.university" type="text" class="resched-input" />
-          </div>
+            <select v-model="profileForm.university_id" class="resched-input uni-select-dropdown">
+    <option value="" disabled>Select your institution</option>
+    <option v-for="uni in universities" :key="uni.id" :value="uni.id">
+        {{ uni.name }}
+    </option>
+</select>
+            </div>
           <div class="form-group">
             <label>Professional Bio</label>
             <textarea v-model="profileForm.bio" class="resched-input" rows="4"></textarea>
@@ -329,16 +345,20 @@ onMounted(fetchData);
         </div>
 
         <div v-else class="profile-upload-wrapper">
-          <div class="mentor-photo-container">
-            <img v-if="mentorProfile.profile_photo_path" :src="`http://localhost:8000/storage/${mentorProfile.profile_photo_path}`" class="mentor-dashboard-img">
-            <div v-else class="photo-placeholder">{{ user?.name?.charAt(0) }}</div>
-          </div>
-          <div class="details-display">
-            <p><strong>Expertise:</strong> {{ mentorProfile.subject_expertise || 'Not set' }}</p>
-            <p><strong>University:</strong> {{ typeof mentorProfile.university === 'object' ? mentorProfile.university.name : (mentorProfile.university || 'Not set') }}</p>
-            <p><strong>Bio:</strong> {{ mentorProfile.bio || 'No bio provided.' }}</p>
-          </div>
-        </div>
+    <div class="mentor-photo-container">
+        <img v-if="mentorProfile.profile_photo_path" :src="`http://localhost:8000/storage/${mentorProfile.profile_photo_path}`" class="mentor-dashboard-img">
+        <div v-else class="photo-placeholder">{{ user?.name?.charAt(0) }}</div>
+    </div>
+    <div class="details-display">
+        <p><strong>Expertise:</strong> {{ mentorProfile.subject_expertise || 'Not set' }}</p>
+        
+        <p><strong>University:</strong> 
+            {{ mentorProfile.university?.name || mentorProfile.university || 'Not set' }}
+        </p>
+        
+        <p><strong>Bio:</strong> {{ mentorProfile.bio || 'No bio provided.' }}</p>
+    </div>
+</div>
       </div>
 
       <div class="verification-card">

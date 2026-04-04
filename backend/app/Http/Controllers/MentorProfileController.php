@@ -16,19 +16,25 @@ class MentorProfileController extends Controller
     return response()->json($mentor);
 }
     public function update(Request $request) {
-        $request->validate([
-            'subject_expertise' => 'required|string|max:255',
-            'university' => 'required|string|max:255', 
-            'bio' => 'nullable|string|max:1000',
-        ]);
+    $request->validate([
+        'subject_expertise' => 'required|string|max:255',
+        'university_id'     => 'required|exists:universities,id', 
+        'bio'               => 'nullable|string',
+    ]);
 
-        $profile = \App\Models\MentorProfile::updateOrCreate(
-            ['user_id' => $request->user()->id],
-            $request->only(['subject_expertise', 'university', 'bio'])
-        );
+    $profile = \App\Models\MentorProfile::updateOrCreate(
+        ['user_id' => $request->user()->id],
+        [
+            'subject_expertise' => $request->subject_expertise,
+            'university_id'     => $request->university_id,
+            'bio'               => $request->bio,
+        ]
+    );
 
-        return response()->json(['message' => 'Profile updated!', 'profile' => $profile]);
-    }
+    $profile->load('university');
+
+    return response()->json(['message' => 'Profile updated!', 'profile' => $profile]);
+}
 
     public function upload(Request $request, MentorProfile $profile){
         $request->validate([
@@ -51,9 +57,10 @@ class MentorProfileController extends Controller
     public function show() {
     $user = auth()->user();
     $profile = MentorProfile::where('user_id', $user->id)
-        ->with(['user', 'university', 'reviews'])
+        ->with(['user', 'university', 'reviews']) 
         ->withCount('reviews') 
         ->firstOrFail();
-    return response()->json($profile);
+        
+    return response()->json($profile); 
 }
 }
