@@ -26,4 +26,8 @@ class Meeting extends Model
     {
         return $this->belongsTo(MentorProfile::class);
     }
+    public function review()
+{
+    return $this->hasOne(Review::class);
+}
 }

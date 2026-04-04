@@ -10,6 +10,7 @@ const startPeriod = ref('AM');
 const endHour = ref('10');
 const endMinute = ref('00');
 const endPeriod = ref('AM');
+const pastMeetings = ref([]); 
 
 const allowedHours = computed(() => {
     const hours = [];
@@ -58,16 +59,20 @@ const profileForm = ref({
 
 const fetchData = async () => {
     try {
-        const [profileRes, requestsRes, upcomingRes, uniRes] = await Promise.all([
+        const [profileRes, requestsRes, upcomingRes, uniRes, pastRes] = await Promise.all([
             axios.get('http://localhost:8000/api/mentor/profile'),
             axios.get('http://localhost:8000/api/mentor/meetings/requests'), 
             axios.get('http://localhost:8000/api/mentor/meetings/upcoming'),
-            axios.get('http://localhost:8000/api/universities') 
+            axios.get('http://localhost:8000/api/universities'),
+            axios.get('http://localhost:8000/api/mentor/meetings/past')
         ]);
         
         universities.value = uniRes.data;
         const data = profileRes.data.profile || profileRes.data;
-mentorProfile.value = data;
+        mentorProfile.value = data;
+        meetingRequests.value = requestsRes.data;
+        upcomingMeetings.value = upcomingRes.data; 
+        pastMeetings.value = pastRes.data; 
 
 console.log("Full Profile Object:", data);         
         profileForm.value = {
@@ -278,6 +283,49 @@ const saveReschedule = async (id) => {
     }
 };
 
+const activeTab = ref('thisWeek');
+const pastSearchName = ref('');
+const pastSearchDate = ref('');
+
+const filteredMeetings = computed(() => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const oneWeekFromNow = new Date(today);
+  oneWeekFromNow.setDate(today.getDate() + 7);
+
+  const confirmed = upcomingMeetings.value.filter(m => m.status === 'approved');
+
+  if (activeTab.value === 'thisWeek') {
+    return confirmed.filter(m => {
+      const d = new Date(m.date);
+      return d >= today && d < oneWeekFromNow;
+    });
+  } 
+  
+  if (activeTab.value === 'future') {
+    return confirmed.filter(m => {
+      const d = new Date(m.date);
+      return d >= oneWeekFromNow;
+    });
+  }
+
+  if (activeTab.value === 'past') {
+    return pastMeetings.value.filter(m => {
+      const matchesName = m.student_name?.toLowerCase().includes(pastSearchName.value.toLowerCase());
+      const matchesDate = pastSearchDate.value ? m.date === pastSearchDate.value : true;
+      return matchesName && matchesDate;
+    });
+  }
+
+  return [];
+});
+
+const uniquePastStudents = computed(() => {
+    const names = pastMeetings.value.map(m => m.student_name);
+    return [...new Set(names)].sort();
+});
+
 onMounted(fetchData);
 </script>
 
@@ -454,15 +502,43 @@ onMounted(fetchData);
         </div>
       </div>
 
-      <div class="verification-card">
-  <h2>Confirmed Meetings</h2>
-  <div v-if="upcomingMeetings.length === 0" class="empty-state">No upcoming meetings.</div>
-  
-  <div v-for="meeting in upcomingMeetings" :key="meeting.id" class="meeting-item-card confirmed">
+  <div class="verification-card">
+  <div class="tabs-header">
+    <h2>Confirmed Meetings</h2>
+    <div class="tab-buttons">
+      <button :class="{ active: activeTab === 'thisWeek' }" @click="activeTab = 'thisWeek'">This Week</button>
+      <button :class="{ active: activeTab === 'future' }" @click="activeTab = 'future'">Future</button>
+      <button :class="{ active: activeTab === 'past' }" @click="activeTab = 'past'">Past</button>
+    </div>
+  </div>
+
+  <div v-if="activeTab === 'past'" class="past-filters">
+    <select v-model="pastSearchName" class="resched-input small uni-select-dropdown">
+        <option value="">All Students</option>
+        <option v-for="name in uniquePastStudents" :key="name" :value="name">
+            {{ name }}
+        </option>
+    </select>
+
+    <input v-model="pastSearchDate" type="date" class="resched-input small">
+    
+    <button v-if="pastSearchName || pastSearchDate" @click="pastSearchName = ''; pastSearchDate = ''" class="btn-text danger small">
+        Clear
+    </button>
+</div>
+
+  <div v-if="filteredMeetings.length === 0" class="empty-state">
+    No meetings found for this category.
+  </div>
+
+  <div v-for="meeting in filteredMeetings" :key="meeting.id" 
+       class="meeting-item-card confirmed" :class="{ 'past-card': activeTab === 'past' }">
+    
     <div class="booking-content">
       <div class="meeting-info">
         <strong>{{ meeting.student_name }}</strong>
-        <div v-if="editingMeetingId !== meeting.id">
+        
+        <div v-if="activeTab === 'past' || editingMeetingId !== meeting.id">
           {{ formatLongDate(meeting.date) }} <br> 
           {{ format12Hour(meeting.start_time) }} – {{ format12Hour(meeting.end_time) }}
           <div class="duration-label">
@@ -470,69 +546,74 @@ onMounted(fetchData);
           </div>
         </div>
         
-        <div v-else class="edit-inputs">
-                  <label class="edit-label">Date</label>
-                  <input v-model="editData.date" type="date" class="resched-input">
+        <div v-else-if="activeTab !== 'past' && editingMeetingId === meeting.id" class="edit-inputs">
+          <label class="edit-label">Date</label>
+          <input v-model="editData.date" type="date" class="resched-input">
 
-                  <div class="duration-preview" :class="{ 'invalid': ![15,30,45,60].includes(currentRescheduleDuration) }">
-                      Current Duration: {{ currentRescheduleDuration }} minutes
-                      <span v-if="![15,30,45,60].includes(currentRescheduleDuration) && currentRescheduleDuration > 0">
-                          (Must be 15, 30, 45, or 60)
-                      </span>
-                  </div>
-                  
-                  <label class="edit-label">Start Time (8 AM - 6 PM)</label>
-                  <div class="custom-time-picker">
-                      <select v-model="startHour" @change="syncEditData" class="time-select">
-                          <option v-for="h in allowedHours.filter(h => h.period === startPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
-                      </select>
-                      <span class="separator">:</span>
-                      <select v-model="startMinute" @change="syncEditData" class="time-select">
-                          <option value="00">00</option>
-                          <option value="15">15</option>
-                          <option value="30">30</option>
-                          <option value="45">45</option>
-                      </select>
-                      <select v-model="startPeriod" @change="syncEditData" class="time-select period">
-                          <option value="AM">AM</option>
-                          <option value="PM">PM</option>
-                      </select>
-                  </div>
+          <div class="duration-preview" :class="{ 'invalid': ![15,30,45,60].includes(currentRescheduleDuration) }">
+            Current Duration: {{ currentRescheduleDuration }} minutes
+            <span v-if="![15,30,45,60].includes(currentRescheduleDuration) && currentRescheduleDuration > 0">
+              (Must be 15, 30, 45, or 60)
+            </span>
+          </div>
+          
+          <label class="edit-label">Start Time (8 AM - 6 PM)</label>
+          <div class="custom-time-picker">
+            <select v-model="startHour" @change="syncEditData" class="time-select">
+              <option v-for="h in allowedHours.filter(h => h.period === startPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
+            </select>
+            <span class="separator">:</span>
+            <select v-model="startMinute" @change="syncEditData" class="time-select">
+              <option value="00">00</option><option value="15">15</option>
+              <option value="30">30</option><option value="45">45</option>
+            </select>
+            <select v-model="startPeriod" @change="syncEditData" class="time-select period">
+              <option value="AM">AM</option><option value="PM">PM</option>
+            </select>
+          </div>
 
-                  <label class="edit-label">End Time</label>
-                  <div class="custom-time-picker">
-                      <select v-model="endHour" @change="syncEditData" class="time-select">
-                          <option v-for="h in allowedHours.filter(h => h.period === endPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
-                      </select>
-                      <span class="separator">:</span>
-                      <select v-model="endMinute" @change="syncEditData" class="time-select">
-                          <option value="00">00</option>
-                          <option value="15">15</option>
-                          <option value="30">30</option>
-                          <option value="45">45</option>
-                      </select>
-                      <select v-model="endPeriod" @change="syncEditData" class="time-select period">
-                          <option value="AM">AM</option>
-                          <option value="PM">PM</option>
-                      </select>
-                  </div>
-              </div>
+          <label class="edit-label">End Time</label>
+          <div class="custom-time-picker">
+            <select v-model="endHour" @change="syncEditData" class="time-select">
+              <option v-for="h in allowedHours.filter(h => h.period === endPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
+            </select>
+            <span class="separator">:</span>
+            <select v-model="endMinute" @change="syncEditData" class="time-select">
+              <option value="00">00</option><option value="15">15</option>
+              <option value="30">30</option><option value="45">45</option>
+            </select>
+            <select v-model="endPeriod" @change="syncEditData" class="time-select period">
+              <option value="AM">AM</option><option value="PM">PM</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <div class="action-row-horizontal">
-        <template v-if="editingMeetingId !== meeting.id">
-          <button @click="startEdit(meeting)" class="btn-text">Reschedule</button>
-          <button @click="cancelMeeting(meeting)" class="btn-text">Cancel</button>
-
+        <template v-if="activeTab !== 'past'">
+          <template v-if="editingMeetingId !== meeting.id">
+            <button @click="startEdit(meeting)" class="btn-text">Reschedule</button>
+            <button @click="cancelMeeting(meeting)" class="btn-text">Cancel</button>
+          </template>
+          <template v-else>
+            <button @click="saveReschedule(meeting.id)" class="btn-text success">Save</button>
+            <button @click="editingMeetingId = null" class="btn-text">Back</button>
+          </template>
         </template>
+        
         <template v-else>
-          <button @click="saveReschedule(meeting.id)" class="btn-text success">Save</button>
-          <button @click="editingMeetingId = null" class="btn-text">Back</button>
+          <div v-if="meeting.review" class="review-badge">
+            <div class="stars">
+              <span v-for="i in 5" :key="i" :class="{ 'gold': i <= meeting.review.rating }">★</span>
+            </div>
+            <p class="review-comment">"{{ meeting.review.comment }}"</p>
+          </div>
+          <div v-else class="no-review">No feedback left yet.</div>
         </template>
       </div>
     </div>
 
-    <div class="booking-footer" v-if="editingMeetingId !== meeting.id">
+    <div class="booking-footer" v-if="activeTab !== 'past' && editingMeetingId !== meeting.id">
       <a v-if="meeting.meeting_link" :href="meeting.meeting_link" target="_blank" class="join-btn">
         🎥 Join Jitsi
       </a>
@@ -541,9 +622,9 @@ onMounted(fetchData);
       </button>
     </div>
   </div>
-      </div>
+</div>
+</div> 
     </div>
-  </div>
 </template>
 
 <style scoped>
@@ -722,5 +803,74 @@ onMounted(fetchData);
     background: #fee2e2;
     color: #ef4444;
     border-color: #fecaca;
+}
+
+.tabs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.tab-buttons {
+  display: flex;
+  gap: 10px;
+  background: #f0f2f5;
+  padding: 5px;
+  border-radius: 8px;
+}
+
+.tab-buttons button {
+  border: none;
+  background: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.8rem;
+  transition: 0.3s;
+}
+
+.tab-buttons button.active {
+  background: white;
+  color: #3e55f8;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.past-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 1rem;
+  
+}
+
+.resched-input.small {
+  font-size: 0.8rem;
+  padding: 5px 10px;
+}
+
+.review-badge {
+  background: #f8faff;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #dee4fe;
+  max-width: 250px;
+}
+
+.stars { color: #ccc; font-size: 1.1rem; }
+.stars .gold { color: #f4bd3f; }
+
+.review-comment {
+  font-size: 0.75rem;
+  font-style: italic;
+  margin-top: 5px;
+  color: #555;
+}
+
+.past-card { opacity: 0.85; border-style: dashed; }
+
+.past-filters select.small {
+    max-width: 180px;
+    cursor: pointer;
 }
 </style>

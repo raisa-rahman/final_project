@@ -105,6 +105,7 @@ public function upcoming()
                 'start_time' => $meeting->start_time,
                 'end_time' => $meeting->end_time,
                 'meeting_link' => $meeting->meeting_link, 
+                'status' => $meeting->status,
             ];
         });
 }
@@ -188,6 +189,36 @@ public function cancel($id)
     $meeting->update(['status' => 'declined']); 
 
     return response()->json(['message' => 'Meeting cancelled successfully']);
+}
+
+public function past(Request $request)
+{
+    $mentorProfile = $request->user()->mentorProfile;
+    
+    if (!$mentorProfile) {
+        return response()->json([]);
+    }
+
+    return \App\Models\Meeting::where('mentor_profile_id', $mentorProfile->id)
+        ->where(function ($query) {
+            $query->where('date', '<', now()->toDateString())
+                  ->orWhere('status', 'declined')
+                  ->orWhere('status', 'completed');
+        })
+        ->with(['student', 'review']) 
+        ->orderBy('date', 'desc')
+        ->get()
+        ->map(function ($meeting) {
+            return [
+                'id' => $meeting->id,
+                'student_name' => $meeting->student ? $meeting->student->name : 'Unknown Student',
+                'date' => $meeting->date,
+                'start_time' => $meeting->start_time,
+                'end_time' => $meeting->end_time,
+                'status' => $meeting->status,
+                'review' => $meeting->review, 
+            ];
+        });
 }
 }
 
