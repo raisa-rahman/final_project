@@ -66,7 +66,6 @@ const submitRequest = async () => {
         return;
     }
 
-    const startTotal = parseInt(bookingRequest.value.start_time.replace(':', ''));
     const endTotal = parseInt(bookingRequest.value.end_time.replace(':', ''));
 
     if (endTotal > 1800) {

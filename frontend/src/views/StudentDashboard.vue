@@ -13,30 +13,6 @@ const message = ref('');
 const error = ref(false);
 const favoriteIds = ref([]); 
 
-const isMentorFavorited = (id) => favoriteIds.value.includes(id);
-
-const toggleFavorite = async (mentorId) => {
-    try {
-        const response = await axios.post(`http://localhost:8000/api/mentors/${mentorId}/favorite`);
-        
-        if (response.data.status === 'added') {
-            if (!favoriteIds.value.includes(mentorId)) {
-                favoriteIds.value.push(mentorId);
-            }
-        } else if (response.data.status === 'removed') {
-            favoriteIds.value = favoriteIds.value.filter(id => id !== mentorId);
-        }
-        
-        console.log("Updated Favorite IDs:", favoriteIds.value);
-    } catch (err) {
-        console.error("Error toggling favorite. Check if User.php has favorites() method.", err);
-    }
-};
-
-const savedMentors = computed(() => {
-    return mentors.value.filter(mentor => favoriteIds.value.includes(mentor.id));
-});
-
 const searchQuery = ref({
     subject: '',
     university: ''

@@ -497,79 +497,85 @@ onMounted(fetchData);
     </div>
 
     <div class="grid-layout meetings-section" style="margin-top: 2rem;">
-      <div class="profile-card">
-        <h2>Meeting Requests</h2>
-        <div v-if="meetingRequests.length === 0" class="empty-state">No pending requests.</div>
-        <div v-for="req in meetingRequests" :key="req.id" class="meeting-item-card">
-          <div class="booking-content">
-            <div class="meeting-info">
-              <strong>{{ req.student_name }}</strong>
-              <div v-if="editingMeetingId !== req.id">
-                {{ formatLongDate(req.date) }} <br>
-                {{ format12Hour(req.start_time) }} – {{ format12Hour(req.end_time) }}
-              </div>
-              <div v-else class="edit-inputs">
-                  <label class="edit-label">Date</label>
-                  <input v-model="editData.date" type="date" class="resched-input">
+  <div class="profile-card">
+    <h2>Meeting Requests</h2>
+    <div v-if="meetingRequests.length === 0" class="empty-state">No pending requests.</div>
+    
+    <div v-for="req in meetingRequests" :key="req.id" class="meeting-item-card">
+      <div class="booking-content">
+        <div class="meeting-info">
+          <div class="student-header">
+            <span class="user-icon">👤</span>
+            <strong>{{ req.student?.name || req.student_name }}</strong>
+          </div>
 
-                  <div class="duration-preview" :class="{ 'invalid': ![15,30,45,60].includes(currentRescheduleDuration) }">
-                    Current Duration: {{ currentRescheduleDuration }} minutes
-                    <span v-if="![15,30,45,60].includes(currentRescheduleDuration) && currentRescheduleDuration > 0">
-                        (Must be 15, 30, 45, or 60)
-                    </span>
-                </div>
-                  
-                  <label class="edit-label">Start Time (8 AM - 6 PM)</label>
-                  <div class="custom-time-picker">
-                      <select v-model="startHour" @change="syncEditData" class="time-select">
-                          <option v-for="h in allowedHours.filter(h => h.period === startPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
-                      </select>
-                      <span class="separator">:</span>
-                      <select v-model="startMinute" @change="syncEditData" class="time-select">
-                          <option value="00">00</option>
-                          <option value="15">15</option>
-                          <option value="30">30</option>
-                          <option value="45">45</option>
-                      </select>
-                      <select v-model="startPeriod" @change="syncEditData" class="time-select period">
-                          <option value="AM">AM</option>
-                          <option value="PM">PM</option>
-                      </select>
-                  </div>
-
-                  <label class="edit-label">End Time</label>
-                  <div class="custom-time-picker">
-                      <select v-model="endHour" @change="syncEditData" class="time-select">
-                          <option v-for="h in allowedHours.filter(h => h.period === endPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
-                      </select>
-                      <span class="separator">:</span>
-                      <select v-model="endMinute" @change="syncEditData" class="time-select">
-                          <option value="00">00</option>
-                          <option value="15">15</option>
-                          <option value="30">30</option>
-                          <option value="45">45</option>
-                      </select>
-                      <select v-model="endPeriod" @change="syncEditData" class="time-select period">
-                          <option value="AM">AM</option>
-                          <option value="PM">PM</option>
-                      </select>
-                  </div>
-              </div>
+          <div v-if="editingMeetingId !== req.id">
+            <div class="datetime-display">
+              📅 {{ formatLongDate(req.date) }} <br>
+              🕒 {{ format12Hour(req.start_time) }} – {{ format12Hour(req.end_time) }}
             </div>
-            <div class="action-row-horizontal">
-              <template v-if="editingMeetingId !== req.id">
-                <button @click="handleMeetingAction(req.id, 'approve')" class="btn-text success">Accept</button>
-                <button @click="startEdit(req)" class="btn-text">Reschedule</button>
-                <button @click="cancelMeeting(meeting)" class="btn-text">Cancel</button>
-              </template>
-              <template v-else>
-                <button @click="saveReschedule(req.id)" class="btn-text success">Save</button>
-                <button @click="editingMeetingId = null" class="btn-text">Back</button>
-              </template>
+
+            <div v-if="req.message" class="student-message-box">
+              <label class="message-label">Message from student:</label>
+              <p class="message-text">"{{ req.message }}"</p>
             </div>
           </div>
+
+          <div v-else class="edit-inputs">
+              <label class="edit-label">Date</label>
+              <input v-model="editData.date" type="date" class="resched-input">
+
+              <div class="duration-preview" :class="{ 'invalid': ![15,30,45,60].includes(currentRescheduleDuration) }">
+                Current Duration: {{ currentRescheduleDuration }} minutes
+                <span v-if="![15,30,45,60].includes(currentRescheduleDuration) && currentRescheduleDuration > 0">
+                    (Must be 15, 30, 45, or 60)
+                </span>
+            </div>
+              
+              <label class="edit-label">Start Time</label>
+              <div class="custom-time-picker">
+                  <select v-model="startHour" @change="syncEditData" class="time-select">
+                      <option v-for="h in allowedHours.filter(h => h.period === startPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
+                  </select>
+                  <span class="separator">:</span>
+                  <select v-model="startMinute" @change="syncEditData" class="time-select">
+                      <option value="00">00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option>
+                  </select>
+                  <select v-model="startPeriod" @change="syncEditData" class="time-select period">
+                      <option value="AM">AM</option><option value="PM">PM</option>
+                  </select>
+              </div>
+
+              <label class="edit-label">End Time</label>
+              <div class="custom-time-picker">
+                  <select v-model="endHour" @change="syncEditData" class="time-select">
+                      <option v-for="h in allowedHours.filter(h => h.period === endPeriod)" :key="h.value" :value="h.display">{{ h.display }}</option>
+                  </select>
+                  <span class="separator">:</span>
+                  <select v-model="endMinute" @change="syncEditData" class="time-select">
+                      <option value="00">00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option>
+                  </select>
+                  <select v-model="endPeriod" @change="syncEditData" class="time-select period">
+                      <option value="AM">AM</option><option value="PM">PM</option>
+                  </select>
+              </div>
+          </div>
+        </div>
+
+        <div class="action-row-horizontal">
+          <template v-if="editingMeetingId !== req.id">
+            <button @click="handleMeetingAction(req.id, 'approve')" class="btn-text success">Accept</button>
+            <button @click="startEdit(req)" class="btn-text">Reschedule</button>
+            <button @click="cancelMeeting(req)" class="btn-text danger-text">Cancel</button>
+          </template>
+          <template v-else>
+            <button @click="saveReschedule(req.id)" class="btn-text success">Save</button>
+            <button @click="editingMeetingId = null" class="btn-text">Back</button>
+          </template>
         </div>
       </div>
+    </div>
+  </div>
 
   <div class="verification-card">
   <div class="tabs-header">

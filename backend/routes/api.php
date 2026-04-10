@@ -28,6 +28,9 @@ Route::middleware('auth:sanctum')->group(function () {
     return \App\Models\MentorProfile::with(['user', 'university', 'reviews'])
         ->findOrFail($id);
     });
+    Route::get('/admin/students', function () {
+    return \App\Models\StudentProfile::with('user')->get();
+    });
     Route::post('/admin/mentors/{id}/status', [MentorProfileController::class, 'updateStatus']);
     Route::get('/mentor/meetings/past', [MeetingController::class, 'past']);
 

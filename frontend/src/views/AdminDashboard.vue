@@ -12,6 +12,13 @@ interface Mentor {
 }
 interface University { id: number; name: string; country: string; }
 
+interface Student {
+  id: number;
+  user: User;
+  target_country?: string;
+}
+
+const students = ref<Student[]>([]);
 const mentors = ref<Mentor[]>([]);
 const universities = ref<University[]>([]);
 const loading = ref(true);
@@ -25,12 +32,14 @@ const editUnivData = ref({ name: '', country: '' });
 const fetchData = async () => {
   loading.value = true;
   try {
-    const [mentorRes, univRes] = await Promise.all([
+    const [mentorRes, univRes, studentRes] = await Promise.all([
       axios.get('http://localhost:8000/api/admin/mentors', { withCredentials: true }),
-      axios.get('http://localhost:8000/api/universities')
+      axios.get('http://localhost:8000/api/universities'),
+      axios.get('http://localhost:8000/api/admin/students') 
     ]);
     mentors.value = mentorRes.data;
     universities.value = univRes.data;
+    students.value = studentRes.data; 
   } catch (err) {
     console.error("Failed to fetch data", err);
   } finally { loading.value = false; }
@@ -199,6 +208,19 @@ onMounted(fetchData);
     </div>
   </div>
 </section>
+
+      <section class="admin-section">
+    <h3>Registered Students</h3>
+    <div class="student-list">
+      <div v-for="student in students" :key="student.id" class="student-row">
+        <div class="info">
+          <strong>{{ student.user?.name }}</strong>
+          <span class="email">{{ student.user?.email }}</span>
+          <span class="target">Target: {{ student.target_country || 'Not set' }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
     </div>
   </div>
 </template>
@@ -426,5 +448,34 @@ h1, h2, h3 {
 .admin-actions {
   display: flex;
   gap: 8px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr; /* Changed to 3 columns */
+  gap: 1.5rem; /* Reduced gap slightly for 3 columns */
+  max-width: 100%; /* Ensure it uses full width */
+}
+
+/* Style for the new student rows */
+.student-row {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.student-row .target {
+  font-size: 0.75rem;
+  color: var(--sc-blue);
+  display: block;
+  margin-top: 4px;
+}
+
+/* Ensure sections are scrollable if list is long */
+.mentor-list, .student-list, .university-list {
+  max-height: 500px;
+  overflow-y: auto;
 }
 </style>
