@@ -2,19 +2,33 @@
 import { ref } from 'vue';
 import axios from 'axios';
 
+/**
+ * FileUpload component for handling profile imagery and verification documents.
+ */
 const props = defineProps<{
   uploadType: 'photo' | 'document';
   profileId: number;
 }>();
 
+// Emit an event to notify the parent component when the upload is complete
 const emit = defineEmits(['upload-success']);
+
+// Reactive state to hold the chosen file and track the request status
 const selectedFile = ref<File | null>(null);
 const uploading = ref(false);
 
+/**
+ * Handle the file input change event.
+ * * Stores the first selected file into our reactive variable.
+ */
 const onFileSelect = (event: any) => {
   selectedFile.value = event.target.files[0];
 };
 
+/**
+ * Perform the asynchronous upload to the backend.
+ * * Uses FormData to package the binary file and metadata.
+ */
 const uploadFile = async () => {
     if (!selectedFile.value) return;
     uploading.value = true;

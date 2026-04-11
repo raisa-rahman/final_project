@@ -4,15 +4,21 @@ import { useRouter } from 'vue-router';
 import axios from 'axios';
 import ReviewForm from '../components/ReviewForm.vue';
 
+/**
+ * StudentDashboard component manages the student's personal experience.
+ * It allows students to manage their profile, search for mentors, 
+ * and track meeting requests or past sessions.
+ */
 const router = useRouter();
 const user = JSON.parse(localStorage.getItem('user'));
+// --- State Management ---
 const loading = ref(false);
 const mentorsLoading = ref(true); 
 const mentors = ref([]); 
 const message = ref('');
 const error = ref(false);
 const favoriteIds = ref([]); 
-
+// --- Form & Search State ---
 const searchQuery = ref({
     subject: '',
     university: ''
@@ -23,12 +29,16 @@ const profile = ref({
     target_country: ''
 });
 
+/**
+ * Fetch verified mentors for the directory.
+ * Filters out unverified profiles to ensure safety and quality.
+ */
 const fetchMentors = async () => {
     try {
         const response = await axios.get('http://localhost:8000/api/mentors/directory');
         const rawData = Array.isArray(response.data) ? response.data : (response.data.mentors || []);
         mentors.value = rawData.filter(mentor => Number(mentor.is_verified) === 1);
-        console.log("Verified Mentors initialized:", mentors.value.length);
+        console.log("Verified Mentors initialised:", mentors.value.length);
     } catch (err) {
         console.error("Directory Load Error. Check api.php import.", err);
     } finally {
@@ -36,6 +46,9 @@ const fetchMentors = async () => {
     }
 };
 
+/**
+ * Retrieve the current student's academic goals and profile settings.
+ */
 const fetchProfile = async () => {
     try {
         const response = await axios.get('http://localhost:8000/api/student/profile');
@@ -63,6 +76,9 @@ const updateProfile = async () => {
     }
 };
 
+/**
+ * Handle user logout and clear local session storage.
+ */
 const handleLogout = async () => {
     try {
         await axios.post('http://localhost:8000/logout');
@@ -84,6 +100,9 @@ const fetchFavorites = async () => {
 
 const sentRequests = ref([]);
 
+/**
+ * Fetch the student's list of booked or requested meetings.
+ */
 const fetchSentRequests = async () => {
     try {
         const response = await axios.get('http://localhost:8000/api/student/meetings');
@@ -92,6 +111,9 @@ const fetchSentRequests = async () => {
         console.error("Failed to load sent requests", err);
     }
 };
+/**
+ * Generate a Google Calendar link for an approved meeting.
+ */
 
 const addToGoogleCalendar = (request) => {
     const mentorName = encodeURIComponent(request.mentor_name);
@@ -103,6 +125,9 @@ const addToGoogleCalendar = (request) => {
     window.open(url, '_blank');
 };
 
+/**
+ * Cancel an existing meeting request or confirmed session.
+ */
 const cancelMeeting = async (id) => {
     if (!confirm("Are you sure you want to cancel this mentorship session?")) return;
     try {
@@ -133,6 +158,10 @@ const initiateReschedule = async (meeting) => {
         alert("Reschedule failed. Please ensure the date is today or in the future.");
     }
 };
+
+/**
+ * Format date to British long-form with ordinal suffixes (e.g., Monday, 21st April).
+ */
 
 const formatLongDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -165,7 +194,10 @@ const format12Hour = (timeStr) => {
 
 const currentTab = ref('upcoming'); 
 
-const categorizedMeetings = computed(() => {
+/**
+ * Splits meetings into 'upcoming' (future dates) and 'past' (completed or declined).
+ */
+const categorisedMeetings = computed(() => {
     const now = new Date();
     const upcoming = [];
     const past = [];
@@ -358,13 +390,13 @@ onMounted(() => {
     </div>
   </div>
 
-  <div v-if="categorizedMeetings[currentTab].length === 0" class="empty-state-card">
+  <div v-if="categorisedMeetings[currentTab].length === 0" class="empty-state-card">
     <p v-if="currentTab === 'upcoming'">No upcoming sessions. Time to connect with a mentor!</p>
     <p v-else>No past sessions found.</p>
   </div>
 
   <div v-else class="request-list">
-    <div v-for="request in categorizedMeetings[currentTab]" :key="request.id" class="request-item">
+    <div v-for="request in categorisedMeetings[currentTab]" :key="request.id" class="request-item">
       <div class="request-header-row">
         <div class="mentor-brief">
           <div class="avatar-mini">{{ request.mentor_name.charAt(0) }}</div>
@@ -377,7 +409,7 @@ onMounted(() => {
         </div>
         
         <div class="request-actions-top" v-if="currentTab === 'upcoming' && editingMeetingId !== request.id">
-          <button @click="startReschedule(request)" class="action-link">Reschedule</button>
+          <button @click="startEdit(request)" class="action-link">Reschedule</button>
           <button @click="cancelMeeting(request.id)" class="action-link danger">Cancel</button>
         </div>
       </div>
@@ -438,20 +470,58 @@ onMounted(() => {
                 </div>
             </div>
             <div class="edit-actions">
-                <button @click="submitReschedule(request.id)" class="save-btn small">Confirm Changes</button>
+                <button @click="saveReschedule(request.id)" class="save-btn small">Confirm Changes</button>
                 <button @click="editingMeetingId = null" class="cancel-link">Back</button>
             </div>
         </div>
       </div>
 
       <div class="request-footer" v-if="editingMeetingId !== request.id && request.status.toLowerCase() === 'approved'">
-        <a v-if="request.meeting_link" :href="request.meeting_link" target="_blank" class="join-pill">
-          🎥 Join Jitsi
-        </a>
-        <button @click="addToGoogleCalendar(request)" class="sync-pill">
-          🗓️ Sync Google
+  <a v-if="request.meeting_link" :href="request.meeting_link" target="_blank" class="join-pill">
+    🎥 Join Jitsi
+  </a>
+  <span v-else class="status-note">Link will appear shortly</span>
+
+  <button @click="addToGoogleCalendar(request)" class="sync-pill">
+    🗓️ Sync Google
+  </button>
+</div>
+
+<div v-if="currentTab === 'past'" class="past-session-details">
+    <hr class="section-divider" />
+
+    <div v-if="request.review" class="completed-review-display">
+        <div class="review-meta">
+            <span class="review-label">Your Feedback:</span>
+            <div class="star-rating">
+                <span v-for="star in 5" :key="star" class="star" :class="{ filled: star <= request.review.rating }">
+                    ★
+                </span>
+            </div>
+        </div>
+        <p class="review-text">"{{ request.review.comment }}"</p>
+    </div>
+
+    <div v-else class="review-action-container">
+        <button 
+            @click="toggleReviewForm(request.id)" 
+            class="review-toggle-btn"
+            :class="{ active: activeReviewMeetingId === request.id }"
+        >
+            {{ activeReviewMeetingId === request.id ? 'Close' : '★ Leave a Review' }}
         </button>
-      </div>
+
+        <ReviewForm 
+            v-if="activeReviewMeetingId === request.id" 
+            :meeting-id="request.id" 
+            :mentor-id="request.mentor_profile_id" 
+            @submitted="fetchSentRequests"
+        />
+    </div>
+</div>
+
+<div class="request-footer" v-if="currentTab === 'upcoming' && editingMeetingId !== request.id && request.status.toLowerCase() === 'approved'">
+  </div>
     </div>
   </div>
 </div>
@@ -1109,5 +1179,86 @@ input {
     cursor: pointer;
     font-size: 0.85rem;
     font-weight: 600;
+}
+
+.section-divider {
+    border: 0;
+    border-top: 1px solid #f0f0f0;
+    margin: 15px 0;
+}
+
+.completed-review-display {
+    background: #f9f9f9;
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 4px solid #ffca08;
+}
+
+.review-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.review-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #666;
+}
+
+.star-rating {
+    color: #ddd; /* Empty star color */
+}
+
+.star-rating .star.filled {
+    color: #ffca08; /* Filled star color */
+}
+
+.review-text {
+    font-style: italic;
+    color: #444;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.review-toggle-btn {
+    background: white;
+    border: 1px solid #4a90e2;
+    color: #4a90e2;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.review-toggle-btn:hover, .review-toggle-btn.active {
+    background: #4a90e2;
+    color: white;
+}
+
+.divider { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
+
+.review-stars { color: #ffca08; font-size: 1.2rem; margin-bottom: 5px; }
+.review-stars span { color: #ddd; }
+.review-stars span.filled { color: #ffca08; }
+
+.review-comment { font-style: italic; color: #666; font-size: 0.95rem; }
+
+.review-toggle-btn {
+  background: none;
+  border: 1px solid #4a90e2;
+  color: #4a90e2;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.review-toggle-btn:hover {
+  background: #4a90e2;
+  color: white;
 }
 </style>

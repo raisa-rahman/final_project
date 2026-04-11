@@ -4,6 +4,13 @@ import { useRouter } from 'vue-router';
 import axios from 'axios';
 import FileUpload from '../components/FileUpload.vue';
 
+/**
+ * MentorDashboard manages the professional workspace for mentors.
+ * Features include profile customisation, meeting management (approval/rescheduling),
+ * and tracking historical sessions with students.
+ */
+
+ // --- Time Selection Logic ---
 const startHour = ref('09');
 const startMinute = ref('00');
 const startPeriod = ref('AM');
@@ -12,6 +19,9 @@ const endMinute = ref('00');
 const endPeriod = ref('AM');
 const pastMeetings = ref([]); 
 
+/**
+ * Generates a restricted list of hours allowed for professional sessions (8 AM - 6 PM).
+ */
 const allowedHours = computed(() => {
     const hours = [];
     for (let h = 8; h <= 11; h++) hours.push({ display: h, value: pad(h), period: 'AM' });
@@ -22,6 +32,10 @@ const allowedHours = computed(() => {
 
 const pad = (n) => n.toString().padStart(2, '0');
 
+
+/**
+ * Synchronises UI dropdown values into a 24-hour string format for backend storage.
+ */
 const syncEditData = () => {
     const startObj = allowedHours.value.find(h => h.display == startHour.value && h.period == startPeriod.value);
     if (startObj) editData.value.start_time = `${startObj.value}:${startMinute.value}`;
@@ -29,7 +43,7 @@ const syncEditData = () => {
     const endObj = allowedHours.value.find(h => h.display == endHour.value && h.period == endPeriod.value);
     if (endObj) editData.value.end_time = `${endObj.value}:${endMinute.value}`;
 };
-
+// --- State Management ---
 const router = useRouter();
 const user = ref(JSON.parse(localStorage.getItem('user')));
 const loading = ref(true);
@@ -63,6 +77,9 @@ const profileForm = ref({
     university_id: ''
 });
 
+/**
+ * Fetches all dashboard requirements concurrently to reduce initial load time.
+ */
 const fetchData = async () => {
     try {
         const [profileRes, requestsRes, upcomingRes, uniRes, pastRes] = await Promise.all([
@@ -102,6 +119,9 @@ console.log("Full Profile Object:", data);
     }
 };
 
+/**
+ * Persists updated profile information to the server.
+ */
 const saveProfile = async () => {
     try {
         const payload = {
@@ -127,6 +147,9 @@ const saveProfile = async () => {
     }
 };
 
+/**
+ * Handles approval or rejection of student meeting requests.
+ */
 const handleMeetingAction = async (id, action) => {
     try {
         const url = action === 'approve' 
@@ -141,6 +164,10 @@ const handleMeetingAction = async (id, action) => {
     }
 };
 
+/**
+ * Generates an external Google Calendar link to help mentors schedule reminders.
+ */
+
 const addToGoogleCalendar = (meeting) => {
     const studentName = encodeURIComponent(meeting.student_name);
     const start = meeting.date.replace(/-/g, '') + 'T' + meeting.start_time.replace(/:/g, '') + '00';
@@ -149,6 +176,9 @@ const addToGoogleCalendar = (meeting) => {
     window.open(url, '_blank');
 };
 
+/**
+ * Logs out the mentor and clears local storage.
+ */
 const handleLogout = async () => {
     try { await axios.post('http://localhost:8000/logout'); }
     finally {
@@ -157,9 +187,13 @@ const handleLogout = async () => {
     }
 };
 
+// --- Meeting Editing / Rescheduling ---
 const editingMeetingId = ref(null);
 const editData = ref({ date: '', start_time: '', end_time: '' });
 
+/**
+ * Helper to display 24h time in a user-friendly 12h format.
+ */
 const format12Hour = (timeStr) => {
     if (!timeStr) return '';
     const [hours, minutes] = timeStr.split(':');
@@ -168,6 +202,9 @@ const format12Hour = (timeStr) => {
     return `${h12}:${minutes}${suffix}`;
 };
 
+/**
+ * Formats dates into a formal British long-form style (e.g. Monday, 1st January 2026).
+ */
 const formatLongDate = (dateStr) => {
     const date = new Date(dateStr);
     const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
@@ -184,6 +221,10 @@ const formatLongDate = (dateStr) => {
     });
 };
 
+/**
+ * Initialises the reschedule mode for a specific meeting.
+ */
+
 const startEdit = (meeting) => {
     editingMeetingId.value = meeting.id;
     editData.value = { 
@@ -193,6 +234,9 @@ const startEdit = (meeting) => {
     };
 };
 
+/**
+ * Calculates the total time difference between two strings for UI display.
+ */
 const calculateDuration = (start, end) => {
     if (!start || !end) return '';
     const [sHours, sMin] = start.split(':').map(Number);
@@ -217,6 +261,10 @@ const handlePhotoSuccess = () => {
     alert("Profile photo updated!");
 };
 
+/**
+ * Cancels an approved meeting and notifies the system.
+ */
+
 const cancelMeeting = async (meeting) => {
     const id = meeting.id; 
     if (!confirm("Are you sure you want to cancel this mentorship session?")) return;
@@ -230,6 +278,9 @@ const cancelMeeting = async (meeting) => {
     }
 };
 
+/**
+ * Reactive calculation of the selected reschedule duration in minutes.
+ */
 const currentRescheduleDuration = computed(() => {
     const startObj = allowedHours.value.find(h => h.display == startHour.value && h.period == startPeriod.value);
     const endObj = allowedHours.value.find(h => h.display == endHour.value && h.period == endPeriod.value);
@@ -247,6 +298,11 @@ const currentRescheduleDuration = computed(() => {
     
     return diffMins > 0 ? diffMins : 0;
 });
+
+/**
+ * Validates and submits a reschedule request.
+ * Enforces business rules regarding session length and professional hours.
+ */
 
 const saveReschedule = async (id) => {
     const startObj = allowedHours.value.find(h => h.display == startHour.value && h.period == startPeriod.value);
@@ -295,10 +351,14 @@ const saveReschedule = async (id) => {
     }
 };
 
+// --- Dashboard Tab Filtering ---
 const activeTab = ref('thisWeek');
 const pastSearchName = ref('');
 const pastSearchDate = ref('');
 
+/**
+ * Filters meetings based on the active tab (This Week, Future, or Past).
+ */
 const filteredMeetings = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -332,6 +392,10 @@ const filteredMeetings = computed(() => {
 
   return [];
 });
+
+/**
+ * Returns a list of unique student names for use in historical search filters.
+ */
 
 const uniquePastStudents = computed(() => {
     const names = pastMeetings.value.map(m => m.student_name);
@@ -611,7 +675,12 @@ onMounted(fetchData);
     
     <div class="booking-content">
       <div class="meeting-info">
-        <strong>{{ meeting.student_name }}</strong>
+  <strong>{{ meeting.student_name }}</strong>
+  
+  <div v-if="meeting.message" class="student-message-box">
+    <label class="message-label">Message from student:</label>
+    <p class="message-text">"{{ meeting.message }}"</p>
+  </div>
         
         <div v-if="activeTab === 'past' || editingMeetingId !== meeting.id">
           {{ formatLongDate(meeting.date) }} <br> 
@@ -695,8 +764,10 @@ onMounted(fetchData);
       <button @click="addToGoogleCalendar(meeting)" class="google-sync-btn">
         🗓️ Sync Google
       </button>
+      
     </div>
   </div>
+  
 </div>
 </div> 
     </div>
@@ -1011,5 +1082,48 @@ onMounted(fetchData);
   margin-top: 20px;
   cursor: pointer;
   border: none;
+}
+
+.student-message-box {
+    background: #f0f7ff; /* Light blue background for emphasis */
+    border-left: 4px solid #4a90e2;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.message-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #4a90e2;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.message-text {
+    margin: 0;
+    font-style: italic;
+    color: #333;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.student-message-preview {
+    background: #f8f9fa;
+    border-left: 3px solid #4a90e2;
+    padding: 8px 12px;
+    margin: 8px 0;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.message-icon {
+    margin-right: 5px;
+}
+
+.message-text {
+    color: #555;
+    font-style: italic;
 }
 </style>

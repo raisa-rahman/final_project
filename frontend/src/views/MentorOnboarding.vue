@@ -4,13 +4,18 @@ import axios from 'axios';
 import logoUrl from '../assets/logo.png'; 
 import { ref, watch, onMounted, computed } from 'vue'; 
 
+/**
+ * This component manages both the Login and Signup flows for Mentors.
+ * It includes real-time password validation, university selection, 
+ * and handles CSRF protection via Laravel Sanctum.
+ */
 
 const props = defineProps(['initialMode']);
 const route = useRoute();
 const router = useRouter();
-
+// Determine whether to display the 'login' or 'signup' form based on props or URL path
 const mode = ref(props.initialMode || (route.path.includes('signup') ? 'signup' : 'login'));
-
+// Initialise form state for registration and authentication
 const form = ref({
     name: '',
     email: '',
@@ -19,7 +24,10 @@ const form = ref({
     university_id: '',
     role: 'mentor'
 });
-
+/**
+ * Handle the registration process for new mentors.
+ * Enforces security checks before sending data to the API.
+ */
 const handleSubmit = async () => {
     if (!isPasswordValid.value) {
         alert("Please ensure your password meets all requirements.");
@@ -46,7 +54,9 @@ const handleSubmit = async () => {
         alert(errorMsg);
     }
 };
-
+/**
+ * Handle authentication for existing mentor accounts.
+ */
 const handleLogin = async () => {
     try {
         await axios.get('http://localhost:8000/sanctum/csrf-cookie', { withCredentials: true });
@@ -63,18 +73,25 @@ const handleLogin = async () => {
         alert("Login failed. Check your credentials.");
     }
 };
-
+/**
+ * Watcher: Updates the UI mode if the user navigates between /login and /signup
+ */
 watch(() => route.path, (newPath) => {
   mode.value = newPath.includes('signup') ? 'signup' : 'login';
 });
-
+/**
+ * Switch between Login and Signup modes manually.
+ */
 const toggleMode = (newMode) => {
   mode.value = newMode;
   router.push(`/mentor/${newMode}`);
 };
 
 const universities = ref([]);
-
+/**
+ * Real-time validation logic for password security.
+ * Returns an array of objects indicating which criteria have been met.
+ */
 const passwordRequirements = computed(() => {
     const p = form.value.password;
     return [
@@ -83,9 +100,11 @@ const passwordRequirements = computed(() => {
         { label: 'Contains a special character (@$!%*?)', met: /[!@#$%^&*(),.?":{}|<>]/.test(p) }
     ];
 });
-
+// Returns true only when all complexity rules are satisfied
 const isPasswordValid = computed(() => passwordRequirements.value.every(r => r.met));
-
+/**
+ * Fetch the list of available universities on component mount.
+ */
 onMounted(async () => {
     try {
         const response = await axios.get('http://localhost:8000/api/universities');

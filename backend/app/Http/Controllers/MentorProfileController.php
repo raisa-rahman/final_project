@@ -6,8 +6,19 @@ use Illuminate\Http\Request;
 use App\Models\MentorProfile;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * MentorProfileController manages the creation, retrieval, and verification
+ * of mentor-specific data and associated file uploads.
+ */
+
 class MentorProfileController extends Controller
 {
+
+    /**
+     * Retrieve a specific mentor's profile by ID.
+     * * Fetches associated user details, university information, and reviews,
+     * including a total count of all reviews received.
+     */
     public function getProfile($id)
     {
         $mentor = MentorProfile::with(['user', 'university', 'reviews'])
@@ -17,6 +28,12 @@ class MentorProfileController extends Controller
         return response()->json($mentor);
     }
 
+
+    /**
+     * Update or create the authenticated user's mentor profile.
+     * * Validates the input data to ensure professional standards are met
+     * and returns the updated profile with university details loaded.
+     */
     public function update(Request $request) {
         $request->validate([
             'subject_expertise' => 'required|string|max:255',
@@ -30,6 +47,7 @@ class MentorProfileController extends Controller
             'ask_me_about'      => 'nullable|string',
         ]);
 
+        // Updates existing profile or creates a new entry if one doesn't exist for the user
         $profile = MentorProfile::updateOrCreate(
             ['user_id' => $request->user()->id],
             [
@@ -50,6 +68,10 @@ class MentorProfileController extends Controller
         return response()->json(['message' => 'Profile updated!', 'profile' => $profile]);
     }
 
+    /**
+     * Handle file uploads for profile photos or verification documents.
+     * * Files are stored within the 'public' disk under the 'mentors' directory.
+     */
     public function upload(Request $request, MentorProfile $profile){
         $request->validate([
             'file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
@@ -57,7 +79,10 @@ class MentorProfileController extends Controller
         ]);
 
         if ($request->hasFile('file')) {
+            // Store the file and obtain the path
             $path = $request->file('file')->store('mentors', 'public');
+
+            // Categorise the file based on the provided 'type'
             if ($request->type === 'photo') {
                 $profile->update(['profile_photo_path' => $path]);
             } else {
@@ -68,6 +93,9 @@ class MentorProfileController extends Controller
         return response()->json(['message' => 'Upload failed'], 400);
     }
 
+    /**
+     * Display the profile of the currently authenticated mentor.
+     */
     public function show() {
         $user = auth()->user();
         $profile = MentorProfile::where('user_id', $user->id)
@@ -78,10 +106,17 @@ class MentorProfileController extends Controller
         return response()->json($profile); 
     }
 
+    /**
+     * Update the verification status of a mentor.
+     * * If the status is set to 'rejected' (2), the associated verification 
+     * document is deleted from storage to maintain data privacy.
+     */
     public function updateStatus(Request $request, $id)
     {
         $profile = MentorProfile::findOrFail($id);
         $newStatus = (int) $request->is_verified;
+
+        // If status is 2 (e.g., Rejected/Reset), remove the verification document
 
         if ($newStatus === 2) {
             if ($profile->document_path) {

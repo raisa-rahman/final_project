@@ -13,6 +13,7 @@ The submitted ZIP file is organised as follows to ensure the application runs co
     * `/src`: Frontend components and reactive logic.
 * **`/docs`**: Supplemental documentation including the Final Report.
 * **`README.md`**: This instruction file.
+* **`Github Link`**: https://github.com/raisa-rahman/final_project 
 
 ---
 

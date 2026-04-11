@@ -3,8 +3,14 @@ import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 
+/**
+ * This component fetches and displays a list of verified mentors for the 
+ * landing page or directory sidebar. It ensures that only those who have 
+ * passed the administrative vetting process are shown to the public.
+ */
 const route = useRoute();
 
+// Interface to define the structure of a Mentor object for TypeScript type safety
 interface Mentor {
   id: number;
   profile_photo_path: string;
@@ -15,8 +21,14 @@ interface Mentor {
   };
 }
 
+// Reactive reference to store the list of mentors to be displayed
 const featuredMentors = ref<Mentor[]>([]);
 
+/**
+ * When the component is mounted, retrieve the mentor directory from the API.
+ * The data is filtered to include only verified mentors before being assigned 
+ * to the reactive state.
+ */
 onMounted(async () => {
   try {
     const response = await axios.get('http://localhost:8000/api/mentors/directory');

@@ -1,3 +1,26 @@
+<script setup>
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
+
+const user = ref(null);
+const profile = ref({ target_country: '', target_university: '', study_level: '' });
+
+onMounted(async () => {
+  const res = await axios.get('/api/user');
+  user.value = res.data;
+  if (res.data.mentee_profile) profile.value = res.data.mentee_profile;
+});
+
+const updateProfile = async () => {
+  try {
+    await axios.put('/api/mentee/profile', { ...profile.value, name: user.value.name });
+    alert("Profile updated successfully!");
+  } catch (err) {
+    console.error(err);
+  }
+};
+</script>
+
 <template>
   <div class="profile-container" v-if="user">
     <h1>Edit Your Student Profile</h1>
@@ -23,26 +46,3 @@
     </form>
   </div>
 </template>
-
-<script setup>
-import { ref, onMounted } from 'vue';
-import axios from 'axios';
-
-const user = ref(null);
-const profile = ref({ target_country: '', target_university: '', study_level: '' });
-
-onMounted(async () => {
-  const res = await axios.get('/api/user');
-  user.value = res.data;
-  if (res.data.mentee_profile) profile.value = res.data.mentee_profile;
-});
-
-const updateProfile = async () => {
-  try {
-    await axios.put('/api/mentee/profile', { ...profile.value, name: user.value.name });
-    alert("Profile updated successfully!");
-  } catch (err) {
-    console.error(err);
-  }
-};
-</script>

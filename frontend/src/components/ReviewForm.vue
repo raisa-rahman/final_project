@@ -2,18 +2,26 @@
 import { ref } from 'vue';
 import axios from 'axios';
 
+/**
+ * ReviewForm component for students to provide feedback after a session.
+ */
 const props = defineProps({
     meetingId: Number,
     mentorId: Number
 });
 
+// Emit an event to inform the parent component that the review has been finalised
 const emit = defineEmits(['review-submitted']);
 
+// Emit an event to inform the parent component that the review has been finalised
 const rating = ref(0);
 const hover = ref(0);
 const comment = ref('');
 const isSubmitting = ref(false);
 
+/**
+ * Validate and send the review data to the API.
+ */
 const submitReview = async () => {
     if (rating.value === 0) return alert("Please select a star rating.");
     

@@ -3,8 +3,14 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router'; 
 
+/**
+ * AdminDashboard component provides administrative control over the platform.
+ * Functions include managing university records, student lists, and verifying 
+ * or rejecting mentor applications.
+ */
 const router = useRouter(); 
 
+// Interfaces defining the shape of our data for type safety
 interface User { id: number; name: string; email: string; }
 interface Mentor { 
   id: number; is_verified: boolean | number; user: User; 
@@ -18,17 +24,23 @@ interface Student {
   target_country?: string;
 }
 
+// Reactive state variables for data storage and UI feedback
 const students = ref<Student[]>([]);
 const mentors = ref<Mentor[]>([]);
 const universities = ref<University[]>([]);
 const loading = ref(true);
 
+// State for university creation and inline editing
 const newUniversityName = ref('');
 const newUniversityCountry = ref('');
 const isSubmittingUniv = ref(false);
 const editingUnivId = ref<number | null>(null);
 const editUnivData = ref({ name: '', country: '' });
 
+/**
+ * Fetch all necessary administrative data concurrently.
+ * This ensures the dashboard is populated with mentors, students, and universities upon loading.
+ */
 const fetchData = async () => {
   loading.value = true;
   try {
@@ -45,6 +57,9 @@ const fetchData = async () => {
   } finally { loading.value = false; }
 };
 
+/**
+ * Add a new university record to the system.
+ */
 const addUniversity = async () => {
     if (!newUniversityName.value || !newUniversityCountry.value) return alert("Fill all fields");
     isSubmittingUniv.value = true;
@@ -58,6 +73,9 @@ const addUniversity = async () => {
     finally { isSubmittingUniv.value = false; }
 };
 
+/**
+ * Remove a university record from the database after confirmation.
+ */
 const deleteUniversity = async (id: number) => {
     if (!confirm("Are you sure you want to delete this university?")) return;
     try {
@@ -66,11 +84,17 @@ const deleteUniversity = async (id: number) => {
     } catch (err) { alert("Error deleting university"); }
 };
 
+/**
+ * Enable the inline edit mode for a specific university.
+ */
 const startEditUniv = (univ: University) => {
     editingUnivId.value = univ.id;
     editUnivData.value = { name: univ.name, country: univ.country };
 };
 
+/**
+ * Save the modified university details back to the server.
+ */
 const saveUnivEdit = async (id: number) => {
     try {
         await axios.put(`http://localhost:8000/api/admin/universities/${id}`, editUnivData.value);
@@ -86,11 +110,19 @@ const toggleVerification = async (profileId: number) => {
     } catch (err) { alert("Error updating status"); }
 };
 
+/**
+ * Sign the administrator out and redirect to the login page.
+ */
 const adminLogout = async () => {
     await axios.post('http://localhost:8000/logout');
     router.push('/adminlogin');
 };
 
+/**
+ * Update the verification status of a mentor profile.
+ * * Status 1: Approved.
+ * * Status 2: Rejected (triggers the deletion of sensitive verification documents on the server).
+ */
 const updateStatus = async (id: number, status: number) => {
   try {
     const response = await axios.post(`http://localhost:8000/api/admin/mentors/${id}/status`, {
@@ -216,7 +248,6 @@ onMounted(fetchData);
         <div class="info">
           <strong>{{ student.user?.name }}</strong>
           <span class="email">{{ student.user?.email }}</span>
-          <span class="target">Target: {{ student.target_country || 'Not set' }}</span>
         </div>
       </div>
     </div>

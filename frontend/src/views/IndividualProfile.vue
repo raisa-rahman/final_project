@@ -190,17 +190,6 @@ onMounted(fetchMentorDetails);
                </div>
             </div>
           </section>
-
-          <section class="content-card reviews-section" v-if="mentor.reviews && mentor.reviews.length > 0">
-            <h3>Student Feedback</h3>
-            <div v-for="review in mentor.reviews" :key="review.id" class="review-item">
-                <div class="review-header">
-                    <span class="stars">★ {{ review.rating }}</span>
-                    <span class="review-date">{{ new Date(review.created_at).toLocaleDateString() }}</span>
-                </div>
-                <p class="review-comment">{{ review.comment || 'No comment provided.' }}</p>
-            </div>
-          </section>
         </div>
 
         <div class="sidebar-flow">

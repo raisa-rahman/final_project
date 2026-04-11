@@ -2,13 +2,25 @@
 import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 
+/**
+ * MentorDirectory component manages the searchable list of mentors.
+ * It handles real-time filtering by subject and location, fetching
+ * updated results whenever the user modifies their search criteria.
+ */
+
+ // Reactive state for the mentor list and loading indicator
 const mentors = ref([]);
 const loading = ref(true);
+// Search parameters used to filter the directory results
 const filters = ref({
     subject: '',
     country: ''
 });
 
+/**
+ * Fetch the list of verified mentors from the backend API.
+ * Uses the current filter values as query parameters to narrow down results.
+ */
 const fetchMentors = async () => {
     loading.value = true;
     try {
@@ -26,8 +38,16 @@ const fetchMentors = async () => {
     }
 };
 
+/**
+ * Watcher: Automatically re-trigger the fetch process whenever 
+ * any property within the 'filters' object changes.
+ * { deep: true } ensures that nested property updates (like subject or country) are detected.
+ */
 watch(filters, () => fetchMentors(), { deep: true });
 
+/**
+ * Initialise the directory list as soon as the component is mounted to the DOM.
+ */
 onMounted(fetchMentors);
 </script>
 

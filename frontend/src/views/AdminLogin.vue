@@ -3,26 +3,46 @@ import { ref } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 
+/**
+ * AdminLogin component handles the secure authentication for staff members.
+ * It utilises Laravel Sanctum's CSRF protection and validates the 'admin' 
+ * role before granting access to the dashboard.
+ */
+
 const router = useRouter();
+// Reactive reference to store user credentials
 const form = ref({ email: '', password: '' });
 
+/**
+ * Execute the administrative login sequence.
+ * This involve obtaining a CSRF cookie, verifying credentials, 
+ * and performing a role-based authorisation check.
+ */
 const handleAdminLogin = async () => {
     try {
+        // Step 1: Request a CSRF cookie from the backend to prevent cross-site request forgery
+        // This is a requirement for stateful authentication using Laravel Sanctum
         await axios.get('http://localhost:8000/sanctum/csrf-cookie', { withCredentials: true });
         
+        // Step 2: Post the login credentials to the authentication endpoint
         const response = await axios.post('http://localhost:8000/api/login', form.value, { 
             withCredentials: true,
             headers: { 'Accept': 'application/json' } 
         });
         const userData = response.data.user;
+        // Step 3: Authorisation check. Only users with the 'admin' role may proceed
         if (userData && userData.role === 'admin') {
+            // Persist user data to local storage for session management on the frontend
             localStorage.setItem('user', JSON.stringify(userData));
-            router.push('/staff-portal/dashboard');
+// Redirect the authorised administrator to the staff dashboard            router.push('/staff-portal/dashboard');
         } else {
+            // Rebuff non-admin users even if their credentials are correct
             alert('Access Denied: Admin account required.');
         }
     } catch (error: any) {
+        // Log detailed error diagnostics for technical troubleshooting
         console.error("Detailed Login Error:", error.response?.data || error.message);
+        // Provide a generic alert to the user for security reasons
         alert('Login failed. Please check your credentials.');
     }
 };

@@ -10,11 +10,20 @@ use Google\Service\Calendar\Event;
 use Google\Service\Calendar\ConferenceData;
 use Google\Service\Calendar\ConferenceSolutionKey;
 use Google\Service\Calendar\CreateConferenceRequest;
-
+/**
+ * MeetingController manages the lifecycle of a mentorship session,
+ * including booking, approvals, rescheduling, and history tracking.
+ */
 class MeetingController extends Controller
 {
+    /**
+     * Store a new meeting request in the database.
+     * Validates input, generates a unique Jitsi meeting link, 
+     * and sets the initial status to 'pending'.
+     */
 public function store(Request $request)
 {
+    // Ensure all required booking details are present and logical
     $request->validate([
         'mentor_profile_id' => 'required|exists:mentor_profiles,id',
         'request_date' => 'required|date|after_or_equal:today',
@@ -24,9 +33,9 @@ public function store(Request $request)
 
     $mentor = \App\Models\MentorProfile::with('user')->findOrFail($request->mentor_profile_id);
     $student = Auth::user(); 
-
+    // Format date for the URL-friendly meeting room name
     $formattedDate = \Carbon\Carbon::parse($request->request_date)->format('d-m-y');
-
+    // Create a slug-based room name for the Jitsi video call
     $roomName = "StudentCircus-" . 
                 Str::slug($mentor->user->name) . "-" . 
                 Str::slug($student->name) . "-" . 
@@ -48,11 +57,16 @@ public function store(Request $request)
     return response()->json(['message' => 'Request sent successfully', 'meeting' => $meeting], 201);
 }
 
+/**
+     * Retrieve all meetings associated with the authenticated student.
+     * Includes mentor details and any existing reviews.
+     */
+
 public function studentIndex()
 {
     return Meeting::where('student_id', Auth::id())
         ->where('status', '!=', 'declined') 
-        ->with('mentorProfile.user')
+        ->with(['mentorProfile.user', 'review'])
         ->get()
         ->map(function ($meeting) {
             return [
@@ -63,11 +77,17 @@ public function studentIndex()
                 'start_time' => $meeting->start_time,
                 'end_time' => $meeting->end_time,
                 'status' => $meeting->status,
-                'meeting_link' => $meeting->meeting_link
+                'meeting_link' => $meeting->meeting_link,
+                // 2. Map the review data so the frontend can see it
+                'review' => $meeting->review,               
+                'message' => $meeting->message, // ADD THIS LINE
             ];
         });
 }
 
+/**
+     * Fetch pending meeting requests for the logged-in mentor.
+     */
 public function requests()
 {
     $user = Auth::user();
@@ -82,6 +102,10 @@ public function requests()
         ->get();
 }
 
+/**
+     * Fetch approved/confirmed meetings for the mentor's schedule.
+     * Ordered chronologically to show the next upcoming session first.
+     */
 public function upcoming()
 {
     $user = Auth::user();
@@ -106,9 +130,14 @@ public function upcoming()
                 'end_time' => $meeting->end_time,
                 'meeting_link' => $meeting->meeting_link, 
                 'status' => $meeting->status,
+                'message' => $meeting->message,
             ];
         });
 }
+
+/**
+     * Update a meeting status to 'approved'.
+     */
 
 public function approve($id)
 {
@@ -127,6 +156,9 @@ public function approve($id)
     ]);
 }
 
+/**
+     * Route a request to either approval or decline logic based on the action parameter.
+     */
 public function handleAction($id, $action)
 {
     $meeting = Meeting::findOrFail($id);
@@ -141,7 +173,10 @@ public function handleAction($id, $action)
     return response()->json(['message' => 'Invalid action provided'], 400);
 }
 
-
+/**
+     * Change the date/time of an existing meeting.
+     * This resets the meeting status to 'pending', requiring a fresh approval.
+     */
 public function reschedule(Request $request, $id)
 {
     
@@ -152,7 +187,7 @@ public function reschedule(Request $request, $id)
     ]);
 
     $meeting = Meeting::findOrFail($id);
-    
+    // Ensure only the involved student or mentor can reschedule
     $isStudent = Auth::id() === $meeting->student_id;
     $isMentor = Auth::user()->mentorProfile && Auth::user()->mentorProfile->id === $meeting->mentor_profile_id;
 
@@ -163,7 +198,7 @@ public function reschedule(Request $request, $id)
     $mentor = $meeting->mentorProfile->user;
     $student = $meeting->student; 
     $formattedDate = \Carbon\Carbon::parse($request->date)->format('d-m-y');
-
+    // Regenerate the link to reflect the new date
     $roomName = "StudentCircus-" . Str::slug($mentor->name) . "-" . Str::slug($student->name) . "-" . $formattedDate;
     $newLink = "https://meet.jit.si/" . $roomName;
 
@@ -178,10 +213,14 @@ public function reschedule(Request $request, $id)
     return response()->json(['message' => 'Reschedule successful. Status reset to pending.']);
 }
 
+/**
+     * Cancel a meeting by setting its status to 'declined'.
+     */
 public function cancel($id)
 {
     $meeting = Meeting::findOrFail($id);
     
+    // Authorisation check for both participants
     if (Auth::id() !== $meeting->student_id && Auth::user()->mentorProfile->id !== $meeting->mentor_profile_id) {
         return response()->json(['message' => 'Unauthorized'], 403);
     }
@@ -191,6 +230,10 @@ public function cancel($id)
     return response()->json(['message' => 'Meeting cancelled successfully']);
 }
 
+/**
+     * Retrieve the mentor's history of meetings.
+     * Includes past dates, declined sessions, and completed sessions.
+     */
 public function past(Request $request)
 {
     $mentorProfile = $request->user()->mentorProfile;
@@ -217,6 +260,7 @@ public function past(Request $request)
                 'end_time' => $meeting->end_time,
                 'status' => $meeting->status,
                 'review' => $meeting->review, 
+                'message' => $meeting->message,
             ];
         });
 }

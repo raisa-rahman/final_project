@@ -4,6 +4,18 @@ import axios from 'axios';
 import logoUrl from '../assets/logo.png'; 
 import { ref, watch, computed } from 'vue'; 
 
+/**
+ * StudentAuth component manages the authentication lifecycle for students.
+ * It handles both registration and login, including real-time password
+ * validation and role-based redirection.
+ */
+
+// --- Password Validation Logic ---
+
+/**
+ * Computes a list of requirements for the password to ensure security standards.
+ */
+
 const passwordRequirements = computed(() => {
     const p = form.value.password;
     return [
@@ -13,6 +25,8 @@ const passwordRequirements = computed(() => {
     ];
 });
 
+// Helper flags for template feedback and submission prevention
+
 const isPasswordValid = computed(() => passwordRequirements.value.every(r => r.met));
 const passwordsMatch = computed(() => form.value.password === form.value.password_confirmation);
 
@@ -20,6 +34,7 @@ const route = useRoute();
 const router = useRouter();
 const props = defineProps(['initialMode']);
 
+// Determine if the user is viewing the signup or login view
 const mode = ref(props.initialMode || (route.path.includes('signup') ? 'signup' : 'login'));
 
 const form = ref({
@@ -30,6 +45,10 @@ const form = ref({
     role: 'student'
 });
 
+/**
+ * Handles form submission for both Registration and Login.
+ * Uses Laravel Sanctum for CSRF protection and persists session data.
+ */
 const handleSubmit = async () => {
     const endpoint = mode.value === 'signup' ? 'http://localhost:8000/api/register' : 'http://localhost:8000/api/login';
     
@@ -54,7 +73,7 @@ const handleSubmit = async () => {
             router.push('/student/login/dashboard');
         } else {
             console.warn("User has incorrect role for this portal.");
-            alert("Unauthorized: This portal is for students only.");
+            alert("Unauthorised: This portal is for students only.");
         }
     } catch (error) {
         const errorData = error.response?.data;
@@ -68,9 +87,16 @@ const handleSubmit = async () => {
     }
 };
 
+/**
+ * Watcher: Updates the UI mode if the user navigates via the browser's back/forward buttons.
+ */
 watch(() => route.path, (newPath) => {
   mode.value = newPath.includes('signup') ? 'signup' : 'login';
 });
+
+/**
+ * Navigates between login and signup views within the component.
+ */
 
 const toggleMode = (newMode) => {
   mode.value = newMode;
